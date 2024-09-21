@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from api import DriftAPI
-from src.strategy.bollingerband import BollingerBandsStrategy
-from src.api.drfit.error import handle_drift_api_error
+from src.api.drift import DriftAPI
+from src.strategy.bollingerbands import BollingerBandsStrategy
+from src.api.drift.error import handle_drift_api_error
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

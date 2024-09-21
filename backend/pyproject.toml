@@ -1,21 +1,30 @@
 [tool.poetry]
-name = "nova-algo-backend"
+name = "src"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
-readme = "README.md"
+#readme = "README.md"
+
 
 [tool.poetry.dependencies]
-python = "3.10.11"
-#python = "^3.9"
+python = "^3.10" 
+anchorpy = "0.20.1"
+solana = "^0.34.0"
+#requests = "^2.28.1"
+#types-requests = "^2.28.9"
 ccxt = "^4.0.0"
 pandas = "^1.5.3"
 pandas-ta = "^0.3.14b0"
-anchorpy = "^0.15.0"
-solders = "^0.18.1"
-solana = "^0.30.2"
-driftpy = "^0.6.20"
-asyncio = "^3.4.3"
+anchorpy-core = "0.2.0"
+#drift-jit-proxy = "0.1.4"
+#asyncio = "^3.4.3"
+#python-dotenv = "^1.0.0"
+driftpy = "^0.7.83"
+
+
+
+
+
 
 
 [build-system]

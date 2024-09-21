@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import requests
 
-from common.variables import Variables as var
+from src.common.variables import Variables as var
 
 
 class Variables:
