@@ -7,6 +7,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "3.10.11"
+#python = "^3.9"
+ccxt = "^4.0.0"
+pandas = "^1.5.3"
+pandas-ta = "^0.3.14b0"
+anchorpy = "^0.15.0"
+solders = "^0.18.1"
+solana = "^0.30.2"
+driftpy = "^0.6.20"
+asyncio = "^3.4.3"
 
 
 [build-system]
