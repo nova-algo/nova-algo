@@ -6,7 +6,6 @@ import requests
 
 from src.common.variables import Variables as var
 
-
 class Variables:
     connection = ""	
     wallet = ""

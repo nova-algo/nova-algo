@@ -3,8 +3,8 @@ import json
 import logging
 import asyncio
 
-from anchorpy import Wallet
-from solders.keypair import Keypair
+from anchorpy import Wallet # type: ignore
+from solders.keypair import Keypair # type: ignore
 from solana.rpc.async_api import AsyncClient
 from driftpy.types import (
     MarketType,
