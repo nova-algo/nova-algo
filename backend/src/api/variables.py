@@ -12,20 +12,18 @@ class Variables:
     wallet = ""
     env = ""
     program_id = ""
-    opts
-    authority
-    account_subscription
-    perp_market_indexes
-    spot_market_indexes	
-    oracle_infos
-    tx_params	
-    tx_version	
-    tx_sender
-    active_sub_account_id
-    sub_account_ids	
-    market_lookup_table
-
-
+    opts = None
+    authority = None
+    account_subscription = None
+    perp_market_indexes = []
+    spot_market_indexes = []
+    oracle_infos = {}
+    tx_params = None
+    tx_version = None
+    tx_sender = None
+    active_sub_account_id = 0
+    sub_account_ids = []
+    market_lookup_table = None
     name: str
     qwe = 0
     testnet = True
