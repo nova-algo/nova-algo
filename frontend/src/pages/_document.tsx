@@ -1,3 +1,5 @@
+import { theme } from "@/config/theme";
+import { ColorModeScript } from "@chakra-ui/react";
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
@@ -7,6 +9,7 @@ export default function Document() {
       <body className="antialiased">
         <Main />
         <NextScript />
+        <ColorModeScript initialColorMode={theme.config.initialColorMode} />
       </body>
     </Html>
   );
