@@ -92,6 +92,20 @@ To install this project:
 
    Using `pyenv local` is often preferred for project-specific Python version management as it doesn't affect your global Python environment.
 
+   After setting up pyenv, ensure your IDE or text editor is using the correct Python interpreter:
+
+   - For VS Code: Open the command palette (Ctrl+Shift+P), search for "Python: Select Interpreter", and choose the interpreter that matches your pyenv version (e.g., Python 3.10.11 64-bit ('nova_algo': pyenv)).
+   - For PyCharm: Go to File > Settings > Project: nova_algo > Python Interpreter, and select the interpreter from your pyenv environment.
+
+   You can verify the correct interpreter is being used by running:
+
+   ```
+   which python
+   python --version
+   ```
+
+   These commands should show the path to your pyenv-managed Python and its version (3.10.11).
+
 4. **Set up Poetry Environment**
 
    Create a new Poetry environment and use the Python version managed by pyenv:

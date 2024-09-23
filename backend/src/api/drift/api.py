@@ -10,12 +10,17 @@ from driftpy.types import (
     MarketType,
     OrderType,
     OrderParams,
-    PositionDirection,
+    PositionDirection
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
 from driftpy.account_subscription_config import AccountSubscriptionConfig
 from driftpy.constants.config import configs
+from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION
+from driftpy.math.spot_position import (
+    get_worst_case_token_amounts,
+    is_spot_position_available,
+)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -25,7 +30,7 @@ class DriftAPI:
         self.env = env
         self.drift_client = None
 
-    async def initialize(self):
+    async def initialize(self, subscription_type="polling"):
         keypath = os.environ.get("DRIFT_WALLET_PRIVATE_KEY")
         with open(os.path.expanduser(keypath), "r") as f:
             secret = json.load(f)
@@ -42,10 +47,14 @@ class DriftAPI:
             connection,
             wallet,
             self.env,
-            account_subscription=AccountSubscriptionConfig(),
+            account_subscription=AccountSubscriptionConfig(subscription_type),
         )
+        
+        await self.drift_client.initialize_user()
 
-        await self.drift_client.initialize()
+        # # Add the user with the specified subaccount ID and subscribe to updates
+        # await self.drift_client.add_user(subaccount_id)
+        # await self.drift_client.subscribe()
 
     async def get_position_and_maxpos(self, market_index, max_positions):
         user = self.drift_client.get_user()
@@ -100,8 +109,23 @@ class DriftAPI:
         return leverage, size
 
     async def cancel_all_orders(self):
+        """
+        Cancels all open orders using the Drift client.
+        
+        :param drift_client: The DriftClient instance.
+
+        """
+
+        # market_type = MarketType.Perp()
+        # market_index = 0
+        # direction = PositionDirection.Long()
+        # await drift_client.cancel_orders(market_type, market_index, direction) # cancel bids in perp market 0
+
+        # await drift_client.cancel_orders() # cancels all orders
+        
         user = self.drift_client.get_user()
-        orders = await user.get_open_orders()
+        orders = await asyncio.to_thread(user.get_open_orders)
+        #orders = await user.get_open_orders()
         logger.info(f"Open orders: {orders}")
         logger.info('Canceling open orders...')
         for order in orders:
@@ -110,9 +134,9 @@ class DriftAPI:
 
     async def limit_order(self, market_index, is_buy, sz, limit_px, reduce_only):
         order_params = OrderParams(
-            order_type=OrderType.LIMIT,
-            market_type=MarketType.PERP,
-            direction=PositionDirection.LONG if is_buy else PositionDirection.SHORT,
+            order_type=OrderType.Limit(),
+            market_type=MarketType.Perp(),
+            direction=PositionDirection.Long() if is_buy else PositionDirection.Short(),
             base_asset_amount=sz,
             price=limit_px,
             market_index=market_index,
@@ -127,7 +151,16 @@ class DriftAPI:
 
         return order_result
 
-    async def kill_switch(self, market_index):
+    async def kill_switch(self, market_index, market_type):
+        """
+        Implements a kill switch to close the position when certain conditions are met.
+        
+        :param market_index: The market index.
+        """
+        oracle_price_data = self.drift_client.get_oracle_price_data_for_perp_market(market_index)
+        position, im_in_pos, pos_size, entry_px, pnl_perc, long = self.get_position(market_index)
+
+        
         position = await self.get_position(market_index)
         im_in_pos = position is not None
 
@@ -138,9 +171,9 @@ class DriftAPI:
             long = position.base_asset_amount > 0
 
             order_params = OrderParams(
-                order_type=OrderType.MARKET,
-                market_type=MarketType.PERP,
-                direction=PositionDirection.SHORT if long else PositionDirection.LONG,
+                order_type=OrderType.Market(),
+                market_type=MarketType.Perp(),
+                direction=PositionDirection.Short() if long else PositionDirection.Long(),
                 base_asset_amount=pos_size,
                 market_index=market_index,
             )

@@ -7,6 +7,8 @@ import requests
 from src.common.variables import Variables as var
 
 class Variables:
+    symbol = ""
+    timeframe = ""
     connection = ""	
     wallet = ""
     env = ""
