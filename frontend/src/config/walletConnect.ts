@@ -24,7 +24,7 @@ export const createWalletConnectModal = () => {
   });
 
   // Create modal
-  createWeb3Modal({
+  return createWeb3Modal({
     solanaConfig,
     chains,
     projectId,

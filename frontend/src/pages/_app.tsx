@@ -2,19 +2,20 @@ import { createWalletConnectModal } from "@/config/walletConnect";
 import { AppChakraProvider } from "@/providers/chakra";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import WebApp from "@twa-dev/sdk";
+import { useEffect } from "react";
 
-WebApp.MainButton.hide();
-// Expand the Telegram Mini App to full screen
-WebApp.expand();
-// Initialize the Telegram Mini App SDK
-WebApp.ready();
-// Enable the closing confirmation
-WebApp.enableClosingConfirmation();
-
-// Create the WalletConnect modal
-createWalletConnectModal();
 export default function App({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    import("@twa-dev/sdk").then((twa) => {
+      const WebApp = twa.default;
+      console.log("WebApp", WebApp);
+      WebApp.MainButton.hide();
+      WebApp.expand();
+      WebApp.ready();
+      WebApp.enableClosingConfirmation();
+    });
+    createWalletConnectModal();
+  }, []);
   return (
     <AppChakraProvider>
       <Component {...pageProps} />
