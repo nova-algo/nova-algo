@@ -24,7 +24,7 @@ from driftpy.types import MarketType, OrderType, OrderParams
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class MarketMaker:
+class MarketMakingStrategy(Bot):
     def __init__(self, 
                             drift_client: DriftClient, 
                             market_type: MarketType,
@@ -164,6 +164,8 @@ class MarketMaker:
 
         :param order_id: ID of the order to cancel
         """
+        order_dd = 1
+        await drift_client.cancel_order(order_id)
         # Implementation will be added in the next iteration
 
     def adjust_position(self, oracle_price: Decimal) -> Tuple[Decimal, Decimal]:
@@ -174,6 +176,7 @@ class MarketMaker:
         :return: Tuple of (bid_size, ask_size) to maintain or adjust the position
         """
         # Implementation will be added in the next iteration
+
 
 # Main execution
 async def main():
@@ -198,7 +201,7 @@ async def main():
     )
 
     # Initialize and run the market maker
-    market_maker = MarketMaker(
+    market_maker = MarketMakingStrategy(
         drift_client=drift_client,
         market_type=MarketType.Perp(),
         market_index=0,  # Assuming 0 is the index for SOL-PERP
