@@ -276,7 +276,7 @@ class DriftAPI:
             logger.error(f"Error retrieving user information: {str(e)}")
             raise  # This re-raises the caught exception
 
-    def open_orders(self) -> list[Order]:
+    def get_open_orders(self) -> list[Order]:
         """
         Retrieves the list of user's open orders.
 
@@ -327,8 +327,60 @@ class DriftAPI:
             raise  # This re-raises the caught exception
 
     
-    # close_position
+    async def close_position(self, market_index: int, market_type: MarketType) -> Optional[str]:
+        """
+        Closes the position for the specified market index.
+        
+        :param market_index: The market index.
+        :param market_type: The type of market (Perp or Spot).
+        :return: The transaction signature if successful, None otherwise.
+        """
+        try:
+            position: Union[PerpPosition, SpotPosition] = await self.get_position(market_index, market_type)
+            if position is None:
+                logger.info(f"No position found for market index {market_index}")
+                raise ValueError(f"No position found for market index {market_index}")
+
+            tx_sig = None  # Initialize tx_sig to None
+
+            if market_type == MarketType.Perp():
+                order_params = OrderParams(
+                    order_type=OrderType.Market(),
+                    market_type=market_type,
+                    direction=PositionDirection.Short() if position.base_asset_amount > 0 else PositionDirection.Long(),
+                    base_asset_amount=self.drift_client.convert_to_perp_precision(position.base_asset_amount),
+                    market_index=market_index,
+                    reduce_only=True
+                )
+                tx_sig = await self.drift_client.place_perp_order(order_params)
+                
+            elif market_type == MarketType.Spot:
+                order_params = OrderParams(
+                    order_type=OrderType.Market(),
+                    market_type=market_type,
+                    direction=PositionDirection.Short() if position.scaled_balance > 0 else PositionDirection.Long(),
+                    base_asset_amount=self.drift_client.convert_to_spot_precision(position.scaled_balance),
+                    market_index=market_index,
+                    reduce_only=True
+                )
+                tx_sig = await self.drift_client.place_spot_order(order_params)
+            
+            else:
+                raise ValueError(f"Unsupported market type: {market_type}")
+
+            if tx_sig:
+                logger.info(f"Position closed successfully: {tx_sig}")
+                return tx_sig
+            else:
+                logger.warning("No transaction signature returned when closing position")
+                return None
+
+        except Exception as e:
+            logger.error(f"Error closing position: {str(e)}")
+            raise  # This re-raises the caught exception
+
     # close_all_positions
+    # modify order
     # trading history “ check my branch in path, I did something there”.
     # funding ( settlement and delivery)
 
