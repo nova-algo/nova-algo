@@ -1,15 +1,12 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, ReactNode, useState } from "react";
 import { useContext } from "react";
 import { OktoProvider, BuildType } from "okto-sdk-react";
-
+// Create a context with a default value
 export const AppContext = createContext({});
 
-export const AppContextProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [apiKey, setApiKey] = useState("");
+const oktoApiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY!;
+export const AppContextProvider = ({ children }: { children: ReactNode }) => {
+  const [apiKey, setApiKey] = useState(oktoApiKey);
   const [buildType, setBuildType] = useState(BuildType.SANDBOX);
 
   return (

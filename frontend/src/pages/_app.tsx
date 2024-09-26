@@ -4,7 +4,14 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { useEffect } from "react";
 import { fonts } from "@/lib/fonts";
-export default function App({ Component, pageProps }: AppProps) {
+import { SessionProvider } from "next-auth/react";
+import { type Session } from "next-auth";
+import { AppContextProvider } from "@/context/app-context";
+
+export default function App({
+  Component,
+  pageProps: { session, ...pageProps },
+}: AppProps<{ session: Session }>) {
   useEffect(() => {
     import("@twa-dev/sdk").then((twa) => {
       const WebApp = twa.default;
@@ -24,9 +31,13 @@ export default function App({ Component, pageProps }: AppProps) {
           }
         `}
       </style>
-      <AppChakraProvider>
-        <Component {...pageProps} />
-      </AppChakraProvider>
+      <SessionProvider session={session}>
+        <AppContextProvider>
+          <AppChakraProvider>
+            <Component {...pageProps} />
+          </AppChakraProvider>
+        </AppContextProvider>
+      </SessionProvider>
     </>
   );
 }
