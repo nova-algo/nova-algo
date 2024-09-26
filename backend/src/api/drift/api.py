@@ -2,28 +2,41 @@ import os
 import json
 import logging
 import asyncio
-from typing import Optional
+from typing import Optional, Union
 
 from anchorpy import Wallet # type: ignore
 from solders.keypair import Keypair # type: ignore
+from solders.pubkey import Pubkey # type: ignore
 from solana.rpc.async_api import AsyncClient
+from driftpy.math.amm import calculate_bid_ask_price
+from driftpy.math.market import (calculate_bid_price, calculate_ask_price)
 from driftpy.types import (
     MarketType,
     OrderType,
     OrderParams,
-    PositionDirection
+    PositionDirection,
+    PerpPosition,
+    SpotPosition
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
 from driftpy.account_subscription_config import AccountSubscriptionConfig
 from driftpy.constants.config import configs
+from driftpy.constants.perp_markets import (devnet_perp_market_configs, mainnet_perp_market_configs)
+from driftpy.constants.spot_markets import (devnet_spot_market_configs, mainnet_spot_market_configs)
 from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION
 from driftpy.math.spot_position import (
     get_worst_case_token_amounts,
     is_spot_position_available,
 )
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from driftpy.math.perp_position import (
+    calculate_position_pnl,
+    calculate_entry_price,
+    calculate_base_asset_value,
+    is_available
+)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
 class DriftAPI:
@@ -140,29 +153,32 @@ class DriftAPI:
             logger.info(f"Cancelling order {order}")
             await self.drift_client.cancel_order(order.order_id)
 
-    async def limit_order(self, order_params: OrderParams)-> Optional[str]:
+    async def limit_order(self, order_params: OrderParams) -> Optional[str]:
         """
         Places a limit order using the Drift client.
         
-        :param drift_client: The DriftClient instance.
         :param order_params: The parameters for the limit order.
         :return: The order transaction signature.
         """
-        order_tx_sig = None
-        if order_params.direction == PositionDirection.Long():
-            #order_ix = drift_client.place_perp_order_ix(order_params)
-            order_tx_sig = await self.drift_client.place_perp_order(order_params)
-        elif order_params.direction == PositionDirection.Short():
-            #order_ix = drift_client.place_perp_order_ix(order_params)
-            order_tx_sig = await self.drift_client.place_perp_order(order_params)
-        #order_result = await drift_client.send_ixs(order_ix)
+        if not order_params.market_type:
+            logger.error("Market type not set or invalid in order_params")
+            raise ValueError("Valid market type must be specified in order_params")
 
-        if order_params.direction == PositionDirection.Long():
-            print(f"limit BUY order placed, order tx: {order_tx_sig}")
-        else:
-            print(f"limit SELL order placed, order tx: {order_tx_sig}")
+        try:
+            if order_params.market_type == MarketType.Perp():
+                order_tx_sig = await self.drift_client.place_perp_order(order_params)
+            elif order_params.market_type == MarketType.Spot():
+                order_tx_sig = await self.drift_client.place_spot_order(order_params)
+            else:
+                raise ValueError(f"Unsupported market type: {order_params.market_type}")
 
-        return order_tx_sig
+            direction = "BUY" if order_params.direction == PositionDirection.Long() else "SELL"
+            logger.info(f"{order_params.market_type} limit {direction} order placed, order tx: {order_tx_sig}")
+            return order_tx_sig
+
+        except Exception as e:
+            logger.error(f"Error placing limit order: {str(e)}")
+            return None
 
     async def kill_switch(self, market_index, market_type):
         """
@@ -198,15 +214,26 @@ class DriftAPI:
                 logger.info('Kill switch - BUY TO CLOSE SUBMITTED')
 
             await asyncio.sleep(5)
-            position = await self.get_position(market_index)
+            position = self.drift_client.get_perp_position(market_index)
             im_in_pos = position is not None
 
         logger.info('Position successfully closed in kill switch')
 
-    async def get_position(self, market_index):
-        user = self.drift_client.get_user()
-        positions = [position for position in user.positions if position.market_index == market_index]
-        return positions[0] if positions else None
+    async def get_position(self, market_index: int, market_type: MarketType) -> Optional[Union[PerpPosition, SpotPosition]]:
+        """
+        Retrieves the position information for the specified market index.
+        
+        :param drift_client: The DriftClient instance.
+        :param _market_index: The market index.
+        :return: A tuple containing the position information.
+        """
+
+        if market_type == MarketType.Perp():
+            position = self.drift_client.get_perp_position(market_index)
+        else:
+            position = self.drift_client.get_spot_position(market_index)
+
+        return position
 
     async def get_market_index_by_symbol(self, symbol):
         return await self.drift_client.get_market_index_by_symbol(symbol)
