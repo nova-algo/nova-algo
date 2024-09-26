@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import asyncio
+from typing import Optional
 
 from anchorpy import Wallet # type: ignore
 from solders.keypair import Keypair # type: ignore
@@ -30,7 +31,7 @@ class DriftAPI:
         self.env = env
         self.drift_client = None
 
-    async def initialize(self, subscription_type="polling"):
+    async def initialize(self, subscription_type: str = "polling") -> None:
         keypath = os.environ.get("DRIFT_WALLET_PRIVATE_KEY")
         with open(os.path.expanduser(keypath), "r") as f:
             secret = json.load(f)
@@ -40,7 +41,14 @@ class DriftAPI:
 
         wallet = Wallet(kp)
 
-        url = configs[self.env].rpc_url
+        #url = configs[self.env].rpc_url
+        # Set the appropriate URL based on the environment (devnet or mainnet)
+        # if self.env == "devnet":
+        #     url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+        # elif self.env == "mainnet":
+        # url = "https://mainnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+        
+        url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
         connection = AsyncClient(url)
 
         self.drift_client = DriftClient(
@@ -132,24 +140,29 @@ class DriftAPI:
             logger.info(f"Cancelling order {order}")
             await self.drift_client.cancel_order(order.order_id)
 
-    async def limit_order(self, market_index, is_buy, sz, limit_px, reduce_only):
-        order_params = OrderParams(
-            order_type=OrderType.Limit(),
-            market_type=MarketType.Perp(),
-            direction=PositionDirection.Long() if is_buy else PositionDirection.Short(),
-            base_asset_amount=sz,
-            price=limit_px,
-            market_index=market_index,
-            reduce_only=reduce_only,
-        )
-        order_result = await self.drift_client.place_order(order_params)
+    async def limit_order(self, order_params: OrderParams)-> Optional[str]:
+        """
+        Places a limit order using the Drift client.
+        
+        :param drift_client: The DriftClient instance.
+        :param order_params: The parameters for the limit order.
+        :return: The order transaction signature.
+        """
+        order_tx_sig = None
+        if order_params.direction == PositionDirection.Long():
+            #order_ix = drift_client.place_perp_order_ix(order_params)
+            order_tx_sig = await self.drift_client.place_perp_order(order_params)
+        elif order_params.direction == PositionDirection.Short():
+            #order_ix = drift_client.place_perp_order_ix(order_params)
+            order_tx_sig = await self.drift_client.place_perp_order(order_params)
+        #order_result = await drift_client.send_ixs(order_ix)
 
-        if is_buy:
-            logger.info(f"Limit BUY order placed, resting: {order_result}")
+        if order_params.direction == PositionDirection.Long():
+            print(f"limit BUY order placed, order tx: {order_tx_sig}")
         else:
-            logger.info(f"Limit SELL order placed, resting: {order_result}")
+            print(f"limit SELL order placed, order tx: {order_tx_sig}")
 
-        return order_result
+        return order_tx_sig
 
     async def kill_switch(self, market_index, market_type):
         """
