@@ -32,7 +32,9 @@ from driftpy.types import (
     OrderParams,
     PositionDirection,
     PerpPosition,
-    SpotPosition
+    SpotPosition,
+    UserAccount,
+    Order
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
@@ -67,7 +69,7 @@ class DriftAPI:
         drift_client (DriftClient): The client instance for interacting with the Drift protocol.
     """
 
-    def __init__(self, env="mainnet"):
+    def __init__(self, env: str = "mainnet"):
         """
         Initializes the DriftAPI instance.
 
@@ -76,6 +78,7 @@ class DriftAPI:
         """
         self.env = env
         self.drift_client = None
+        self.user_account: UserAccount | None = None  # Initialize it as None
 
     async def initialize(self, subscription_type: str = "polling") -> None:
         """
@@ -114,8 +117,12 @@ class DriftAPI:
         )
         
         await self.drift_client.initialize_user()
+
+        # Add the user with the specified subaccount ID and subscribe to updates
+        # await self.drift_client.add_user(subaccount_id)
+        # await self.drift_client.subscribe()
     
-    async def cancel_orders_for_market(self, market_type, market_index, subaccount_id: Optional[Pubkey] = None):
+    async def cancel_orders_for_market(self, market_type: MarketType, market_index: int, subaccount_id: Optional[Pubkey] = None):
         """
         Cancels all open orders for a specific market.
 
@@ -146,7 +153,7 @@ class DriftAPI:
             logger.info(f"No open orders to cancel for market type {market_type} and index {market_index}.")
 
     
-    async def cancel_orders_for_market_and_direction(self, market_type, market_index, direction, subaccount_id: Optional[Pubkey] = None):
+    async def cancel_orders_for_market_and_direction(self, market_type: MarketType, market_index: int, direction: PositionDirection, subaccount_id: Optional[Pubkey] = None):
         """
         Cancels all open orders for a specific market and direction.
 
@@ -205,7 +212,7 @@ class DriftAPI:
 
 
 
-    async def limit_order(self, order_params: OrderParams) -> Optional[str]:
+    async def place_limit_order(self, order_params: OrderParams) -> Optional[str]:
         """
         Places a limit order using the Drift client.
 
@@ -293,7 +300,40 @@ class DriftAPI:
             position = self.drift_client.get_spot_position(market_index)
 
         return position
+    
+    def get_user_account(self) -> UserAccount:
+        """
+        Retrieves the user information and stores it in self.user.
 
+        This method fetches the user details from the Drift client, including the user authority
+        and other useful information, and assigns it to the self.user attribute.
+        """
+        try:
+            self.user_account = self.drift_client.get_user_account()
+            logger.info(f"User retrieved successfully. User ID: {self.user_account.authority}")
+            return self.user_account
+        except Exception as e:
+            logger.error(f"Error retrieving user information: {str(e)}")
+            raise  # This re-raises the caught exception
+
+    def open_orders(self) -> list[Order]:
+        """
+        Retrieves the list of user's open orders.
+
+        This method fetches the open orders from the Drift client and returns them as a list.
+        
+        Returns:
+            list: A list of open orders.
+        """
+        try:
+            user = self.drift_client.get_user()
+            open_orders = user.get_open_orders()
+            logger.info(f"Retrieved {len(open_orders)} open orders.")
+            return open_orders
+        except Exception as e:
+            logger.error(f"Error retrieving open orders: {str(e)}")
+            raise  # This re-raises the caught exception
+    
     def get_market_index_and_type(self, name: str) -> Tuple[int, MarketType]:
         """
         Retrieves market index and type for a given market name.
@@ -305,12 +345,6 @@ class DriftAPI:
             Tuple[int, MarketType]: A tuple containing the market index and market type.
         """
         return self.drift_client.get_market_index_and_type(name)
-    
-
-
-            # # Add the user with the specified subaccount ID and subscribe to updates
-        # await self.drift_client.add_user(subaccount_id)
-        # await self.drift_client.subscribe()
 
     # async def get_position_and_maxpos(self, market_index, max_positions):
     #     user = self.drift_client.get_user()
