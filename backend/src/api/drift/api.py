@@ -77,92 +77,151 @@ class DriftAPI:
         # await self.drift_client.add_user(subaccount_id)
         # await self.drift_client.subscribe()
 
-    async def get_position_and_maxpos(self, market_index, max_positions):
-        user = self.drift_client.get_user()
-        positions = []
-        open_positions = []
+    # async def get_position_and_maxpos(self, market_index, max_positions):
+    #     user = self.drift_client.get_user()
+    #     positions = []
+    #     open_positions = []
 
-        for position in user.positions:
-            if position.market_index == market_index and position.base_asset_amount != 0:
-                positions.append(position)
-                open_positions.append(position.market)
+    #     for position in user.positions:
+    #         if position.market_index == market_index and position.base_asset_amount != 0:
+    #             positions.append(position)
+    #             open_positions.append(position.market)
 
-        num_of_pos = len(open_positions)
+    #     num_of_pos = len(open_positions)
 
-        if len(open_positions) > max_positions:
-            logger.info(f'We are in {len(open_positions)} positions and max pos is {max_positions}... closing positions')
-            for position in open_positions:
-                 await self.kill_switch(position.market_index)
-        else:
-            logger.info(f'We are in {len(open_positions)} positions and max pos is {max_positions}... not closing positions')
+    #     if len(open_positions) > max_positions:
+    #         logger.info(f'We are in {len(open_positions)} positions and max pos is {max_positions}... closing positions')
+    #         for position in open_positions:
+    #              await self.kill_switch(position.market_index)
+    #     else:
+    #         logger.info(f'We are in {len(open_positions)} positions and max pos is {max_positions}... not closing positions')
 
-        if positions:
-            position = positions[0]
-            in_pos = True
-            size = position.base_asset_amount
-            pos_sym = position.market
-            entry_px = calculate_entry_price(position)
-            pnl_perc = position.unrealized_pnl_percentage * 100
-            long = size > 0
-        else:
-            in_pos = False
-            size = 0
-            pos_sym = None
-            entry_px = 0
-            pnl_perc = 0
-            long = None
+    #     if positions:
+    #         position = positions[0]
+    #         in_pos = True
+    #         size = position.base_asset_amount
+    #         pos_sym = position.market
+    #         entry_px = calculate_entry_price(position)
+    #         pnl_perc = position.unrealized_pnl_percentage * 100
+    #         long = size > 0
+    #     else:
+    #         in_pos = False
+    #         size = 0
+    #         pos_sym = None
+    #         entry_px = 0
+    #         pnl_perc = 0
+    #         long = None
 
-        return positions, in_pos, size, pos_sym, entry_px, pnl_perc, long, num_of_pos
+    #     return positions, in_pos, size, pos_sym, entry_px, pnl_perc, long, num_of_pos
 
-    async def adjust_leverage_size_signal(self, market_index, leverage):
-        user = self.drift_client.get_user()
-        acct_value = float(user.collateral)
-        acct_val95 = acct_value * 0.95
+    # async def adjust_leverage_size_signal(self, market_index, leverage):
+    #     user = self.drift_client.get_user()
+    #     acct_value = float(user.collateral)
+    #     acct_val95 = acct_value * 0.95
 
-        await self.drift_client.set_leverage(market_index, leverage)
+    #     await self.drift_client.set_leverage(market_index, leverage)
 
-        market = self.drift_client.get_market(market_index)
-        price = float(market.oracle_price)
+    #     market = self.drift_client.get_market(market_index)
+    #     price = float(market.oracle_price)
 
-        size = (acct_val95 / price) * leverage
-        size = round(size, market.base_precision)
+    #     size = (acct_val95 / price) * leverage
+    #     size = round(size, market.base_precision)
 
-        return leverage, size
-
-    async def cancel_all_orders(self):
+    #     return leverage, size
+    
+    async def cancel_orders_for_market(self, market_type, market_index, subaccount_id: Optional[Pubkey] = None):
         """
-        Cancels all open orders using the Drift client.
+        Cancels all open orders for a specific market.
+
+        This function retrieves all open orders for the user, filters them by the given market type and index,
+        and cancels them if any exist.
+
+        Args:
+            market_type (MarketType): The type of the market (e.g., Spot, Perp).
+            market_index (int): The index of the market for which to cancel orders.
+        """
+        # Get the user object from the Drift client
+        user = self.drift_client.get_user()
         
-        :param drift_client: The DriftClient instance.
+        # Retrieve open orders asynchronously
+        open_orders = await asyncio.to_thread(user.get_open_orders)
+        logger.info(f"Open orders: {open_orders}")
+        
+        # Filter orders for the specified market type and index
+        matching_orders = [order for order in open_orders if order.market_type == market_type and order.market_index == market_index]
+        
+        if matching_orders:
+            logger.info(f'Canceling {len(matching_orders)} open orders for market type {market_type} and index {market_index}...')
+            # Cancel the orders and get the transaction signature
+            tx_sig = await self.drift_client.cancel_orders(market_type, market_index, sub_account_id=subaccount_id)
+            logger.info(f"Cancelled orders with transaction signature: {tx_sig}")
+        else:
+            logger.info(f"No open orders to cancel for market type {market_type} and index {market_index}.")
+
+    
+    async def cancel_orders_for_market_and_direction(self, market_type, market_index, direction, subaccount_id: Optional[Pubkey] = None):
+        """
+        Cancels all open orders for a specific market and direction.
+
+        This function retrieves all open orders for the user, filters them by the given market type, index, and direction,
+        and cancels them if any exist.
+
+        Args:
+            market_type (MarketType): The type of the market (e.g., Spot, Perp).
+            market_index (int): The index of the market for which to cancel orders.
+            direction (PositionDirection): The direction of the orders to cancel (e.g., Long, Short).
+        """
+        # Get the user object from the Drift client
+        user = self.drift_client.get_user()
+        
+        # Retrieve open orders asynchronously
+        open_orders = await asyncio.to_thread(user.get_open_orders)
+        logger.info(f"Open orders: {open_orders}")
+        
+        # Filter orders for the specified market type and index
+        matching_orders = [order for order in open_orders if order.market_type == market_type and order.market_index == market_index]
+        
+        if matching_orders:
+            logger.info(f'Canceling {len(matching_orders)} open orders for market type {market_type} and index {market_index}...')
+            # Cancel the orders and get the transaction signature
+            tx_sig = await self.drift_client.cancel_orders(market_type, market_index, direction, sub_account_id=subaccount_id)
+            logger.info(f"Cancelled orders with transaction signature: {tx_sig}")
+        else:
+            logger.info(f"No open orders to cancel for market type {market_type} and index {market_index}.")
+
+    
+    async def cancel_all_orders(self, subaccount_id: Optional[Pubkey] = None):
+        """
+        Cancels all open orders for the user.
 
         """
-
-        # market_type = MarketType.Perp()
-        # market_index = 0
-        # direction = PositionDirection.Long()
-        # await drift_client.cancel_orders(market_type, market_index, direction) # cancel bids in perp market 0
-
-        # await drift_client.cancel_orders() # cancels all orders
-        
+        # Get the user object from the Drift client
         user = self.drift_client.get_user()
-        orders = await asyncio.to_thread(user.get_open_orders)
-        #orders = await user.get_open_orders()
-        logger.info(f"Open orders: {orders}")
-        logger.info('Canceling open orders...')
-        for order in orders:
-            logger.info(f"Cancelling order {order}")
-            await self.drift_client.cancel_order(order.order_id)
+        
+        # Retrieve open orders asynchronously
+        open_orders = await asyncio.to_thread(user.get_open_orders)
+        logger.info(f"Open orders: {open_orders}")
+        
+        logger.info(f'Canceling {len(open_orders)} open orders...')
+        # Cancel the orders and get the transaction signature
+        tx_sig = await self.drift_client.cancel_orders(sub_account_id=subaccount_id)
+        logger.info(f"Cancelled orders with transaction signature: {tx_sig}")
+
+
 
     async def limit_order(self, order_params: OrderParams) -> Optional[str]:
         """
         Places a limit order using the Drift client.
+
+        This method creates and submits a limit order to the Drift exchange using the provided order parameters.
+        It supports both perpetual and spot markets, and handles the order placement process accordingly.
         
         :param order_params: The parameters for the limit order.
         :return: The order transaction signature.
         """
-        if not order_params.market_type:
-            logger.error("Market type not set or invalid in order_params")
-            raise ValueError("Valid market type must be specified in order_params")
+        if not isinstance(order_params.market_type, MarketType):
+            logger.error("Invalid market type in order_params")
+            raise ValueError("Valid MarketType must be specified in order_params")
 
         try:
             if order_params.market_type == MarketType.Perp():
@@ -223,8 +282,8 @@ class DriftAPI:
         """
         Retrieves the position information for the specified market index.
         
-        :param drift_client: The DriftClient instance.
-        :param _market_index: The market index.
+        :param market_index: The market index.
+        :param market_type: The type of market (Perp or Spot).
         :return: A tuple containing the position information.
         """
 
