@@ -245,53 +245,13 @@ class DriftAPI:
             logger.error(f"Error placing limit order: {str(e)}")
             return None
 
-    async def kill_switch(self, market_index, market_type):
-        """
-        Implements a kill switch to close the position when certain conditions are met.
-        
-        :param market_index: The market index.
-        :param market_type: The type of market (Perp or Spot).
-        """
-        oracle_price_data = self.drift_client.get_oracle_price_data_for_perp_market(market_index)
-        position, im_in_pos, pos_size, entry_px, pnl_perc, long = self.get_position(market_index)
-
-        
-        position = await self.get_position(market_index)
-        im_in_pos = position is not None
-
-        while im_in_pos:
-            await self.cancel_all_orders()
-
-            pos_size = abs(position.base_asset_amount)
-            long = position.base_asset_amount > 0
-
-            order_params = OrderParams(
-                order_type=OrderType.Market(),
-                market_type=MarketType.Perp(),
-                direction=PositionDirection.Short() if long else PositionDirection.Long(),
-                base_asset_amount=pos_size,
-                market_index=market_index,
-            )
-            await self.drift_client.place_order(order_params)
-
-            if long:
-                logger.info('Kill switch - SELL TO CLOSE SUBMITTED')
-            else:
-                logger.info('Kill switch - BUY TO CLOSE SUBMITTED')
-
-            await asyncio.sleep(5)
-            position = self.drift_client.get_perp_position(market_index)
-            im_in_pos = position is not None
-
-        logger.info('Position successfully closed in kill switch')
-
-    async def get_position(self, market_index: int, market_type: MarketType) -> Optional[Union[PerpPosition, SpotPosition]]:
+    def get_position(self, market_index: int, market_type: MarketType) -> Optional[Union[PerpPosition, SpotPosition]]:
         """
         Retrieves the position information for the specified market index.
         
         :param market_index: The market index.
         :param market_type: The type of market (Perp or Spot).
-        :return: A tuple containing the position information.
+        :return: The position information, either PerpPosition or SpotPosition, or None if not found.
         """
 
         if market_type == MarketType.Perp():
@@ -345,6 +305,73 @@ class DriftAPI:
             Tuple[int, MarketType]: A tuple containing the market index and market type.
         """
         return self.drift_client.get_market_index_and_type(name)
+    
+    async def get_wallet_balance(self) -> int:
+        """
+        Retrieves the wallet balance.
+
+        This method fetches the wallet balance from the Drift client.
+
+        Returns:
+            int: The wallet balance.
+        """
+        try:
+            connection = self.drift_client.connection
+            public_key = self.drift_client.wallet.public_key
+            response = await connection.get_balance(public_key)
+            balance = response.value
+            logger.info(f"Wallet balance retrieved successfully: {balance} lamports")
+            return balance
+        except Exception as e:
+            logger.error(f"Error retrieving wallet balance: {str(e)}")
+            raise  # This re-raises the caught exception
+
+    
+    # close_position
+    # close_all_positions
+    # trading history “ check my branch in path, I did something there”.
+    # funding ( settlement and delivery)
+
+    
+    # async def kill_switch(self, market_index, market_type):
+    #     """
+    #     Implements a kill switch to close the position when certain conditions are met.
+        
+    #     :param market_index: The market index.
+    #     :param market_type: The type of market (Perp or Spot).
+    #     """
+    #     oracle_price_data = self.drift_client.get_oracle_price_data_for_perp_market(market_index)
+    #     position, im_in_pos, pos_size, entry_px, pnl_perc, long = self.get_position(market_index)
+
+        
+    #     position = await self.get_position(market_index)
+    #     im_in_pos = position is not None
+
+    #     while im_in_pos:
+    #         await self.cancel_all_orders()
+
+    #         pos_size = abs(position.base_asset_amount)
+    #         long = position.base_asset_amount > 0
+
+    #         order_params = OrderParams(
+    #             order_type=OrderType.Market(),
+    #             market_type=MarketType.Perp(),
+    #             direction=PositionDirection.Short() if long else PositionDirection.Long(),
+    #             base_asset_amount=pos_size,
+    #             market_index=market_index,
+    #         )
+    #         await self.drift_client.place_order(order_params)
+
+    #         if long:
+    #             logger.info('Kill switch - SELL TO CLOSE SUBMITTED')
+    #         else:
+    #             logger.info('Kill switch - BUY TO CLOSE SUBMITTED')
+
+    #         await asyncio.sleep(5)
+    #         position = self.drift_client.get_perp_position(market_index)
+    #         im_in_pos = position is not None
+
+    #     logger.info('Position successfully closed in kill switch')
 
     # async def get_position_and_maxpos(self, market_index, max_positions):
     #     user = self.drift_client.get_user()
