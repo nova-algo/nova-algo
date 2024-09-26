@@ -6,17 +6,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
-from dotenv import load_dotenv # type: ignore
+from dotenv import load_dotenv
 
-from src.api.drift.api import DriftAPI
-from driftpy.types import MarketType, OrderType, OrderParams, PositionDirection # type: ignore
-from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
+from api import DriftAPI
+from driftpy.types import MarketType, OrderType, OrderParams, PositionDirection
+from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class MarketMakingStrategy:
+class MarketMakingStrategy(Bot):
     def __init__(self, 
                 drift_api: DriftAPI, 
                 market_symbol: str,
