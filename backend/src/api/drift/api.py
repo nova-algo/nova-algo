@@ -1,3 +1,19 @@
+"""
+This module provides a high-level API for interacting with the Drift protocol.
+
+It includes functionality for initializing a connection to the Drift protocol,
+managing orders, retrieving position information, and performing various trading operations.
+
+Classes:
+    DriftAPI: A class that encapsulates methods for interacting with the Drift protocol.
+
+Dependencies:
+    - anchorpy
+    - solders
+    - solana
+    - driftpy
+"""
+
 import os
 import json
 import logging
@@ -40,11 +56,37 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class DriftAPI:
+    """
+    A class that provides methods for interacting with the Drift protocol.
+
+    This class encapsulates the functionality needed to connect to the Drift protocol,
+    manage orders, retrieve position information, and perform various trading operations.
+
+    Attributes:
+        env (str): The environment to connect to ('mainnet' or 'devnet').
+        drift_client (DriftClient): The client instance for interacting with the Drift protocol.
+    """
+
     def __init__(self, env="mainnet"):
+        """
+        Initializes the DriftAPI instance.
+
+        Args:
+            env (str, optional): The environment to connect to. Defaults to "mainnet".
+        """
         self.env = env
         self.drift_client = None
 
     async def initialize(self, subscription_type: str = "polling") -> None:
+        """
+        Initializes the connection to the Drift protocol.
+
+        This method sets up the wallet, establishes a connection to the Solana network,
+        and initializes the Drift client.
+
+        Args:
+            subscription_type (str, optional): The type of subscription for account updates. Defaults to "polling".
+        """
         keypath = os.environ.get("DRIFT_WALLET_PRIVATE_KEY")
         with open(os.path.expanduser(keypath), "r") as f:
             secret = json.load(f)
@@ -139,6 +181,7 @@ class DriftAPI:
         Args:
             market_type (MarketType): The type of the market (e.g., Spot, Perp).
             market_index (int): The index of the market for which to cancel orders.
+            subaccount_id (Optional[Pubkey], optional): The subaccount ID. Defaults to None.
         """
         # Get the user object from the Drift client
         user = self.drift_client.get_user()
@@ -170,6 +213,7 @@ class DriftAPI:
             market_type (MarketType): The type of the market (e.g., Spot, Perp).
             market_index (int): The index of the market for which to cancel orders.
             direction (PositionDirection): The direction of the orders to cancel (e.g., Long, Short).
+            subaccount_id (Optional[Pubkey], optional): The subaccount ID. Defaults to None.
         """
         # Get the user object from the Drift client
         user = self.drift_client.get_user()
@@ -177,9 +221,15 @@ class DriftAPI:
         # Retrieve open orders asynchronously
         open_orders = await asyncio.to_thread(user.get_open_orders)
         logger.info(f"Open orders: {open_orders}")
+        # Filter orders for the specified market type, index, and direction
+        matching_orders = [
+            order for order in open_orders 
+            if order.market_type == market_type 
+            and order.market_index == market_index
+            and order.direction == direction
+        ]
         
-        # Filter orders for the specified market type and index
-        matching_orders = [order for order in open_orders if order.market_type == market_type and order.market_index == market_index]
+        logger.info(f"Matching orders: {matching_orders}")
         
         if matching_orders:
             logger.info(f'Canceling {len(matching_orders)} open orders for market type {market_type} and index {market_index}...')
@@ -194,6 +244,8 @@ class DriftAPI:
         """
         Cancels all open orders for the user.
 
+        Args:
+            subaccount_id (Optional[Pubkey], optional): The subaccount ID. Defaults to None.
         """
         # Get the user object from the Drift client
         user = self.drift_client.get_user()
@@ -247,6 +299,7 @@ class DriftAPI:
         Implements a kill switch to close the position when certain conditions are met.
         
         :param market_index: The market index.
+        :param market_type: The type of market (Perp or Spot).
         """
         oracle_price_data = self.drift_client.get_oracle_price_data_for_perp_market(market_index)
         position, im_in_pos, pos_size, entry_px, pnl_perc, long = self.get_position(market_index)
@@ -287,8 +340,6 @@ class DriftAPI:
         
         :param market_index: The market index.
         :param market_type: The type of market (Perp or Spot).
-        :param market_index: The market index.
-        :param market_type: The type of market (Perp or Spot).
         :return: A tuple containing the position information.
         """
 
@@ -300,7 +351,27 @@ class DriftAPI:
         return position
 
     async def get_market_index_by_symbol(self, symbol):
+        """
+        Retrieves the market index for a given symbol.
+
+        Args:
+            symbol (str): The market symbol.
+
+        Returns:
+            int: The market index corresponding to the given symbol.
+        """
         return await self.drift_client.get_market_index_by_symbol(symbol)
 
     def get_market(self, market_index):
+        """
+        Retrieves market information for a given market index.
+
+        Args:
+            market_index (int): The market index.
+
+        Returns:
+            Market: The market information for the given index.
+        """
         return self.drift_client.get_market(market_index)
+    
+    
