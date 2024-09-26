@@ -222,6 +222,9 @@ class DriftAPI:
         if not isinstance(order_params.market_type, MarketType):
             logger.error("Invalid market type in order_params")
             raise ValueError("Valid MarketType must be specified in order_params")
+        if not isinstance(order_params.market_type, MarketType):
+            logger.error("Invalid market type in order_params")
+            raise ValueError("Valid MarketType must be specified in order_params")
 
         try:
             if order_params.market_type == MarketType.Perp():
@@ -282,6 +285,8 @@ class DriftAPI:
         """
         Retrieves the position information for the specified market index.
         
+        :param market_index: The market index.
+        :param market_type: The type of market (Perp or Spot).
         :param market_index: The market index.
         :param market_type: The type of market (Perp or Spot).
         :return: A tuple containing the position information.
