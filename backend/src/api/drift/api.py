@@ -128,30 +128,54 @@ class DriftAPI:
         size = round(size, market.base_precision)
 
         return leverage, size
+    
+    async def cancel_orders_for_market(self, market_type, market_index):
+        """
+        Cancels all open orders for a specific market.
+
+        This function retrieves all open orders for the user, filters them by the given market type and index,
+        and cancels them if any exist.
+
+        Args:
+            market_type (MarketType): The type of the market (e.g., Spot, Perp).
+            market_index (int): The index of the market for which to cancel orders.
+        """
+        # Get the user object from the Drift client
+        user = self.drift_client.get_user()
+        
+        # Retrieve open orders asynchronously
+        open_orders = await asyncio.to_thread(user.get_open_orders)
+        logger.info(f"Open orders: {open_orders}")
+        
+        # Filter orders for the specified market type and index
+        matching_orders = [order for order in open_orders if order.market_type == market_type and order.market_index == market_index]
+        
+        if matching_orders:
+            logger.info(f'Canceling {len(matching_orders)} open orders for market type {market_type} and index {market_index}...')
+            # Cancel the orders and get the transaction signature
+            tx_sig = await self.drift_client.cancel_orders(market_type, market_index)
+            logger.info(f"Cancelled orders with transaction signature: {tx_sig}")
+        else:
+            logger.info(f"No open orders to cancel for market type {market_type} and index {market_index}.")
 
     async def cancel_all_orders(self):
         """
-        Cancels all open orders using the Drift client.
-        
-        :param drift_client: The DriftClient instance.
+        Cancels all open orders 
 
         """
-
-        # market_type = MarketType.Perp()
-        # market_index = 0
-        # direction = PositionDirection.Long()
-        # await drift_client.cancel_orders(market_type, market_index, direction) # cancel bids in perp market 0
-
-        # await drift_client.cancel_orders() # cancels all orders
-        
+        # Get the user object from the Drift client
         user = self.drift_client.get_user()
-        orders = await asyncio.to_thread(user.get_open_orders)
-        #orders = await user.get_open_orders()
-        logger.info(f"Open orders: {orders}")
-        logger.info('Canceling open orders...')
-        for order in orders:
-            logger.info(f"Cancelling order {order}")
-            await self.drift_client.cancel_order(order.order_id)
+        
+        # Retrieve open orders asynchronously
+        open_orders = await asyncio.to_thread(user.get_open_orders)
+        logger.info(f"Open orders: {open_orders}")
+        
+        logger.info(f'Canceling {len(open_orders)} open orders...')
+        # Cancel the orders and get the transaction signature
+        tx_sig = await self.drift_client.cancel_orders()
+        logger.info(f"Cancelled orders with transaction signature: {tx_sig}")
+
+
 
     async def limit_order(self, order_params: OrderParams) -> Optional[str]:
         """
@@ -160,9 +184,9 @@ class DriftAPI:
         :param order_params: The parameters for the limit order.
         :return: The order transaction signature.
         """
-        if not order_params.market_type:
-            logger.error("Market type not set or invalid in order_params")
-            raise ValueError("Valid market type must be specified in order_params")
+        if not isinstance(order_params.market_type, MarketType):
+            logger.error("Invalid market type in order_params")
+            raise ValueError("Valid MarketType must be specified in order_params")
 
         try:
             if order_params.market_type == MarketType.Perp():
@@ -223,8 +247,8 @@ class DriftAPI:
         """
         Retrieves the position information for the specified market index.
         
-        :param drift_client: The DriftClient instance.
-        :param _market_index: The market index.
+        :param market_index: The market index.
+        :param market_type: The type of market (Perp or Spot).
         :return: A tuple containing the position information.
         """
 
