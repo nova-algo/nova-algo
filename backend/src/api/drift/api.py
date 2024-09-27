@@ -530,7 +530,7 @@ class DriftAPI:
                 "sub_account_id": sub_account_id
             }
     
-    #needs to handle both perp and spot and base ammount precision
+    #needs to handle both perp and spot and base ammount precision, would refactor
     async def modify_order(self, 
                            order_id: int, 
                            new_price: Optional[float] = None,
@@ -594,6 +594,26 @@ class DriftAPI:
                 "order_id": order_id,
                 "sub_account_id": sub_account_id
             }
+
+
+    def get_perp_position(self, market_index: int, sub_account_id: Optional[int] = None) -> Optional[PerpPosition]:
+        """
+        Get the perpetual position for a specific market index.
+
+        Args:
+            market_index (int): The index of the market to query.
+
+        Returns:
+            Optional[PerpPosition]: The perpetual position if found and not available, otherwise None.
+        """
+        try:
+            drift_user = self.drift_client.get_user(sub_account_id)
+            position = drift_user.get_perp_position(market_index)
+            return position
+        except Exception as e:
+            print(f"Error retrieving perpetual position for market index {market_index}: {str(e)}")
+            return None
+            
 
     # trading history “ check my branch in path, I did something there”.
     # funding ( settlement and delivery)
