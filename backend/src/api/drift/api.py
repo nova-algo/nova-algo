@@ -461,6 +461,7 @@ class DriftAPI:
             logger.error(error_msg)
             return [], error_msg  
 
+    #you might need to rewrite this to and use the drift user class instead
     def get_all_open_positions(self) -> Tuple[Dict[int, Dict[str, List[Union[PerpPosition, SpotPosition]]]], Union[str, None]]:
         """
         Get all open positions (both perp and spot) for the user across main account and all sub-accounts
@@ -497,7 +498,38 @@ class DriftAPI:
             return {}, error_msg
 
         return all_positions, None
-          
+
+    async def cancel_order(self, order_id: Optional[int] = None, sub_account_id: Optional[int] = None) -> dict:
+        """
+        Cancel a specific order or the most recent order if no order_id is provided.
+
+        Args:
+            order_id (Optional[int]): The ID of the order to cancel. If None, cancels the most recent order.
+            sub_account_id (Optional[int]): The subaccount ID which contains the order. If None, uses the default subaccount.
+
+        Returns:
+            dict: A dictionary containing the result of the cancellation attempt.
+        """
+        try:
+            tx_sig = await self.drift_client.cancel_order(order_id, sub_account_id)
+            
+            return {
+                "success": True,
+                "message": "Order cancelled successfully",
+                "transaction_signature": tx_sig,
+                "order_id": order_id,
+                "sub_account_id": sub_account_id
+            }
+        except Exception as e:
+            logger.error(f"Error cancelling order: {str(e)}")
+            return {
+                "success": False,
+                "message": f"Failed to cancel order: {str(e)}",
+                "order_id": order_id,
+                "sub_account_id": sub_account_id
+            }
+
+
     # modify order
     # trading history “ check my branch in path, I did something there”.
     # funding ( settlement and delivery)
