@@ -614,6 +614,24 @@ class DriftAPI:
             print(f"Error retrieving perpetual position for market index {market_index}: {str(e)}")
             return None
             
+    def get_spot_position(self, market_index: int, sub_account_id: Optional[int] = None) -> Optional[SpotPosition]:
+        """
+        Get the spot position for a specific market index.
+
+        Args:
+            market_index (int): The index of the market to query.
+
+        Returns:
+            Optional[SpotPosition]: The spot position if found and not available, otherwise None.
+        """
+        try:
+            drift_user = self.drift_client.get_user(sub_account_id)
+            position = drift_user.get_spot_position(market_index)
+            return position
+        except Exception as e:
+            print(f"Error retrieving spot position for market index {market_index}: {str(e)}")
+            return None
+        
 
     # trading history “ check my branch in path, I did something there”.
     # funding ( settlement and delivery)
