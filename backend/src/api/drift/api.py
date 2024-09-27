@@ -34,7 +34,8 @@ from driftpy.types import (
     PerpPosition,
     SpotPosition,
     UserAccount,
-    Order
+    Order,
+    ModifyOrderParams
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
@@ -528,9 +529,72 @@ class DriftAPI:
                 "order_id": order_id,
                 "sub_account_id": sub_account_id
             }
+    
+    #needs to handle both perp and spot and base ammount precision
+    async def modify_order(self, 
+                           order_id: int, 
+                           new_price: Optional[float] = None,
+                           new_size: Optional[float] = None,
+                           sub_account_id: Optional[int] = None) -> dict:
+        """
+        Modify an existing order.
 
+        Args:
+            order_id (int): The ID of the order to modify.
+            new_price (Optional[float]): The new price for the order. If None, price remains unchanged.
+            new_size (Optional[float]): The new size for the order. If None, size remains unchanged.
+            sub_account_id (Optional[int]): The subaccount ID which contains the order. If None, uses the default subaccount.
 
-    # modify order
+        Returns:
+            dict: A dictionary containing the result of the modification attempt.
+        """
+        try:
+            # Get the existing order
+            user = self.drift_client.get_user(sub_account_id)
+            existing_order = user.get_order(order_id)
+            
+            if not existing_order:
+                return {
+                    "success": False,
+                    "message": f"Order with ID {order_id} not found",
+                    "order_id": order_id,
+                    "sub_account_id": sub_account_id
+                }
+
+            # Prepare modification parameters
+            modify_params = ModifyOrderParams(
+                order_id=order_id,
+                price=new_price if new_price is not None else existing_order.price,
+                base_asset_amount=new_size if new_size is not None else existing_order.base_asset_amount,
+                market_type=existing_order.market_type,
+                direction=existing_order.direction,
+                market_index=existing_order.market_index,
+                reduce_only=existing_order.reduce_only,
+                post_only=existing_order.post_only,
+                order_type=existing_order.order_type,
+            )
+
+            # Modify the order
+            tx_sig = await self.drift_client.modify_order(modify_params, sub_account_id)
+            
+            return {
+                "success": True,
+                "message": "Order modified successfully",
+                "transaction_signature": tx_sig,
+                "order_id": order_id,
+                "new_price": new_price,
+                "new_size": new_size,
+                "sub_account_id": sub_account_id
+            }
+        except Exception as e:
+            logger.error(f"Error modifying order: {str(e)}")
+            return {
+                "success": False,
+                "message": f"Failed to modify order: {str(e)}",
+                "order_id": order_id,
+                "sub_account_id": sub_account_id
+            }
+
     # trading history “ check my branch in path, I did something there”.
     # funding ( settlement and delivery)
 
