@@ -100,14 +100,21 @@ class DriftAPI:
 
         wallet = Wallet(kp)
 
-        #url = configs[self.env].rpc_url
-        # Set the appropriate URL based on the environment (devnet or mainnet)
-        # if self.env == "devnet":
-        #     url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
-        # elif self.env == "mainnet":
-        # url = "https://mainnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
-        
-        url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+         # Check if the keypath is provided or set in the environment variable
+        if keypath is None:
+            if os.environ["ANCHOR_WALLET"] is None:
+                raise NotImplementedError("need to provide keypath or set ANCHOR_WALLET")
+            else:
+                keypath = os.environ["ANCHOR_WALLET"]
+
+        #Set the appropriate URL based on the environment (devnet or mainnet)
+        if self.env == "devnet":
+            url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+        elif self.env == "mainnet":
+            url = "https://mainnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+        else:
+            raise NotImplementedError("only devnet/mainnet env supported")
+            
         connection = AsyncClient(url)
 
         self.drift_client = DriftClient(
