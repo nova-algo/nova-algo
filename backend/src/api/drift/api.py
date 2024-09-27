@@ -18,7 +18,7 @@ import os
 import json
 import logging
 import asyncio
-from typing import Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from anchorpy import Wallet # type: ignore
 from solders.keypair import Keypair # type: ignore
@@ -327,7 +327,7 @@ class DriftAPI:
             raise  # This re-raises the caught exception
 
     
-    async def close_position(self, market_index: int, market_type: MarketType) -> Optional[str]:
+    async def close_position(self, market_index: int, market_type: MarketType) ->  Tuple[Optional[str], Optional[str]]:
         """
         Closes the position for the specified market index.
         
@@ -339,9 +339,9 @@ class DriftAPI:
             position: Union[PerpPosition, SpotPosition] = await self.get_position(market_index, market_type)
             if position is None:
                 logger.info(f"No position found for market index {market_index}")
-                raise ValueError(f"No position found for market index {market_index}")
-
-            tx_sig = None  # Initialize tx_sig to None
+                return None, f"No position found for market index {market_index}"
+            
+            #tx_sig = None  # Initialize tx_sig to None
 
             if market_type == MarketType.Perp():
                 order_params = OrderParams(
@@ -353,8 +353,7 @@ class DriftAPI:
                     reduce_only=True
                 )
                 tx_sig = await self.drift_client.place_perp_order(order_params)
-                
-            elif market_type == MarketType.Spot:
+            elif market_type == MarketType.Spot():
                 order_params = OrderParams(
                     order_type=OrderType.Market(),
                     market_type=market_type,
@@ -364,22 +363,137 @@ class DriftAPI:
                     reduce_only=True
                 )
                 tx_sig = await self.drift_client.place_spot_order(order_params)
-            
             else:
-                raise ValueError(f"Unsupported market type: {market_type}")
+                logger.error(f"Unsupported market type: {market_type}")
+                return None, f"Unsupported market type: {market_type}"
 
             if tx_sig:
                 logger.info(f"Position closed successfully: {tx_sig}")
-                return tx_sig
+                return tx_sig, None
             else:
                 logger.warning("No transaction signature returned when closing position")
                 return None
 
         except Exception as e:
             logger.error(f"Error closing position: {str(e)}")
-            raise  # This re-raises the caught exception
+            return None, str(e)
 
-    # close_all_positions
+    async def close_all_positions(self):
+        """
+        Closes all open positions for the user across all markets.
+
+        :return: A list of transaction signatures for successful closures, empty list if no positions were closed.
+        """
+        try:
+            tx_sigs = []
+            user_account =  self.drift_client.get_user_account()
+            
+            # Close all perp positions
+            for perp_position in user_account.perp_positions:
+                if perp_position.base_asset_amount != 0:
+                    tx_sig = await self.close_position(perp_position.market_index, MarketType.Perp())
+                    if tx_sig:
+                        tx_sigs.append(tx_sig)
+
+            # Close all spot positions
+            for spot_position in user_account.spot_positions:
+                if spot_position.scaled_balance != 0:
+                    tx_sig = await self.close_position(spot_position.market_index, MarketType.Spot())
+                    if tx_sig:
+                        tx_sigs.append(tx_sig)
+
+            if tx_sigs:
+                logger.info(f"All positions closed successfully. Transaction signatures: {tx_sigs}")
+            else:
+                logger.info("No open positions to close.")
+
+            return tx_sigs
+
+        except Exception as e:
+            logger.error(f"Error closing all positions: {str(e)}")
+            return None, str(e)
+    
+    def get_open_perp_positions(self, account_id: int) -> Tuple[List[PerpPosition], Union[str, None]]:
+        """
+        Get open perp positions for a specific account
+
+        Args:
+            account_id (int): The account ID (0 for main account, positive integers for sub-accounts)
+
+        Returns:
+            Tuple[List[PerpPosition], Union[str, None]]: A tuple containing the list of open perp positions and an error message (if any)
+        """
+        try:
+            user_account = self.drift_client.get_user_account(account_id if account_id != 0 else None)
+            open_positions = []
+            for position in user_account.perp_positions:
+                if not is_available(position) and position.base_asset_amount != 0:
+                    open_positions.append(position)
+            return open_positions, None
+        except Exception as e:
+            error_msg = f"Error retrieving perp positions for account {account_id}: {str(e)}"
+            logger.error(error_msg)
+            return [], error_msg
+     
+    def get_open_spot_positions(self, account_id: int) -> Tuple[List[SpotPosition], Union[str, None]]:
+        """
+        Get open spot positions for a specific account
+
+        Args:
+            account_id (int): The account ID (0 for main account, positive integers for sub-accounts)
+
+        Returns:
+            Tuple[List[SpotPosition], Union[str, None]]: A tuple containing the list of open spot positions and an error message (if any)
+        """
+        try:
+            user_account = self.drift_client.get_user_account(account_id if account_id != 0 else None)
+            open_positions = []
+            for position in user_account.spot_positions:
+                if not is_spot_position_available(position) and (position.scaled_balance != 0 or position.open_bids != 0 or position.open_asks != 0):
+                    open_positions.append(position)
+            return open_positions, None
+        except Exception as e:
+            error_msg = f"Error retrieving spot positions for account {account_id}: {str(e)}"
+            logger.error(error_msg)
+            return [], error_msg  
+
+    def get_all_open_positions(self) -> Tuple[Dict[int, Dict[str, List[Union[PerpPosition, SpotPosition]]]], Union[str, None]]:
+        """
+        Get all open positions (both perp and spot) for the user across main account and all sub-accounts
+
+        Returns:
+            Tuple[Dict[int, Dict[str, List[Union[PerpPosition, SpotPosition]]]], Union[str, None]]: 
+            A tuple containing:
+            1. Dictionary with account_ids as keys (0 for main account, positive integers for sub-accounts), 
+               each containing a nested dictionary with 'perp' and 'spot' keys, 
+               each containing a list of open positions
+            2. An error message if there was a critical error, None otherwise
+        """
+        all_positions = {}
+        account_ids = [0] + self.drift_client.sub_account_ids  # 0 represents the main account
+
+        for account_id in account_ids:
+            perp_positions, perp_error = self.get_open_perp_positions(account_id)
+            spot_positions, spot_error = self.get_open_spot_positions(account_id)
+
+            if perp_error and spot_error:
+                error_msg = f"Failed to retrieve both perp and spot positions for account {account_id}"
+                logger.error(error_msg)
+                continue
+
+            if perp_positions or spot_positions:
+                all_positions[account_id] = {
+                    'perp': perp_positions,
+                    'spot': spot_positions
+                }
+
+        if not all_positions:
+            error_msg = "Failed to retrieve any open positions" 
+            logger.error(error_msg)
+            return {}, error_msg
+
+        return all_positions, None
+          
     # modify order
     # trading history “ check my branch in path, I did something there”.
     # funding ( settlement and delivery)
@@ -461,5 +575,61 @@ class DriftAPI:
     #         long = None
 
     #     return positions, in_pos, size, pos_sym, entry_px, pnl_perc, long, num_of_pos
+
+    
+    # def get_all_open_positions(self) -> Dict[int, Dict[str, List[Union[PerpPosition, SpotPosition]]]]:
+    #     """
+    #     Get all open positions (both perp and spot) for the user across main account and all sub-accounts and markets
+
+    #     Returns:
+    #         Dict[int, Dict[str, List[Union[PerpPosition, SpotPosition]]]]: 
+    #         Dictionary with account_ids as keys (0 for main account, positive integers for sub-accounts), 
+    #         each containing a nested dictionary with 'perp' and 'spot' keys, 
+    #         each containing a list of open positions
+
+    #     Raises:
+    #         Exception: If there's an error retrieving positions for an account
+    #     """
+    #     all_positions = {}
+
+    #     # List to hold all account IDs (main account + sub-accounts)
+    #     account_ids = [0] + self.drift_client.sub_account_ids  # 0 represents the main account
+
+    #     for account_id in account_ids:
+    #         try:
+    #             if account_id == 0:
+    #                 user_account = self.drift_client.get_user_account()  # Main account
+    #             else:
+    #                 user_account = self.drift_client.get_user_account(account_id)  # Sub-account
+                
+    #             open_positions = {
+    #                 'perp': [],
+    #                 'spot': []
+    #             }
+
+    #             # Get open perp positions
+    #             for position in user_account.perp_positions:
+    #                 try:
+    #                     if not is_available(position) and position.base_asset_amount != 0:
+    #                         open_positions['perp'].append(position)
+    #                 except AttributeError as e:
+    #                     logger.warning(f"Error processing perp position for account {account_id}: {e}")
+
+    #             # Get open spot positions
+    #             for position in user_account.spot_positions:
+    #                 try:
+    #                     if not is_spot_position_available(position) and (position.scaled_balance != 0 or position.open_bids != 0 or position.open_asks != 0):
+    #                         open_positions['spot'].append(position)
+    #                 except AttributeError as e:
+    #                     logger.warning(f"Error processing spot position for account {account_id}: {e}")
+
+    #             if open_positions['perp'] or open_positions['spot']:
+    #                 all_positions[account_id] = open_positions
+
+    #         except Exception as e:
+    #             logger.error(f"Error retrieving positions for account {account_id}: {e}")
+    #             return None, str(e)
+
+    #     return all_positions
     
     
