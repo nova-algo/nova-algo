@@ -4,6 +4,9 @@ import time
 from typing import Dict, List, Tuple
 from decimal import Decimal
 import numpy as np
+import requests
+import pandas as pd
+from io import StringIO
 from driftpy.types import OrderType, OrderParams, PositionDirection, MarketType # type: ignore
 from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
 from src.api.drift.api import DriftAPI
@@ -35,6 +38,8 @@ class MarketMaker(Bot):
         self.is_healthy = True
         self.is_running = False
         
+        self.historical_data = None
+        
     async def init(self):
         """
         Initialize the market maker by setting up the market index and initial position.
@@ -46,6 +51,9 @@ class MarketMaker(Bot):
         
         logger.info(f"Initialized market maker for {self.config.symbol} (Market Index: {self.market_index})")
         logger.info(f"Initial position size: {self.position_size}")
+        
+        # Fetch historical data
+        await self.fetch_historical_data()
 
     async def reset(self):
         """
@@ -67,9 +75,59 @@ class MarketMaker(Bot):
 
         # Re-initialize position
         await self.update_position()
+        
+        # Refresh historical data
+        await self.fetch_historical_data()
 
         logger.info("Market maker reset complete.")
         self.is_running = True
+        
+    async def fetch_historical_data(self):
+        """
+        Fetch historical trade data from the provided URL.
+        """
+        url = 'https://drift-historical-data-v2.s3.eu-west-1.amazonaws.com/program/dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH/user/FrEFAwxdrzHxgc7S4cuFfsfLmcg8pfbxnkCQW83euyCS/tradeRecords/2023/20230201'
+        
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            
+            # Parse CSV data
+            csv_data = StringIO(response.text)
+            df = pd.read_csv(csv_data)
+            
+            # Process the data as needed
+            # For example, you might want to convert timestamps, filter by market, etc.
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+            df = df[df['marketIndex'] == self.market_index]
+            
+            self.historical_data = df
+            logger.info(f"Successfully fetched and processed historical data. Shape: {df.shape}")
+        except Exception as e:
+            logger.error(f"Failed to fetch historical data: {str(e)}")
+
+    async def analyze_historical_data(self):
+        """
+        Analyze the historical data to inform trading decisions.
+        """
+        if self.historical_data is None or self.historical_data.empty:
+            logger.warning("No historical data available for analysis.")
+            return
+        
+        # Example analysis: Calculate average trade size and price
+        avg_trade_size = self.historical_data['size'].mean()
+        avg_trade_price = self.historical_data['price'].mean()
+        
+        logger.info(f"Historical data analysis - Avg trade size: {avg_trade_size}, Avg trade price: {avg_trade_price}")
+        
+        # You can use these insights to adjust your trading parameters
+        # For example, you might adjust your order size based on the average trade size:
+        self.config.order_size = max(self.config.order_size, Decimal(str(avg_trade_size / 2)))
+        
+        # Or adjust your spread based on historical price volatility:
+        price_std = self.historical_data['price'].std()
+        self.config.base_spread = max(self.config.base_spread, Decimal(str(price_std / 100)))  # 1% of price standard deviation
+
 
     async def start_interval_loop(self, interval_ms: Optional[int] = 1000):
         """
