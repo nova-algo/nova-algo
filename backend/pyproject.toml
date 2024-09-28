@@ -17,8 +17,8 @@ pandas = "^1.5.3"
 pandas-ta = "^0.3.14b0"
 anchorpy-core = "0.2.0"
 #drift-jit-proxy = "0.1.4"
-#asyncio = "^3.4.3"
-#python-dotenv = "^1.0.0"
+asyncio = "^3.4.3"
+python-dotenv = "^1.0.0"
 driftpy = "^0.7.83"
 
 
