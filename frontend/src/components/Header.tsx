@@ -1,20 +1,30 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from "@chakra-ui/next-js";
 import {
+  AbsoluteCenter,
   Box,
   Button,
+  Divider,
   HStack,
+  IconButton,
   Image,
-  Text,
   useColorModeValue,
+  useDisclosure,
+  VStack,
 } from "@chakra-ui/react";
 import { signIn, useSession, signOut } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
+import { ResponsivePopoverSheet } from "./SheetOrPopover";
+import { FaGoogle } from "react-icons/fa";
+import { LuMenu } from "react-icons/lu";
 
 export default function Header() {
-  const bgColor = useColorModeValue("blackAlpha.800", "gray.900");
+  const bgColor = useColorModeValue("#1b1b1b", "gray.900");
   const [isLoading, setIsLoading] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const { data: session } = useSession();
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const {
     isLoggedIn,
     authenticate,
@@ -82,75 +92,156 @@ export default function Header() {
   useEffect(() => {
     if (session) {
       handleAuthenticate();
+      // createWallet();
+      // getUserDetails();
     }
   }, [session]);
+
+  async function fetchWallets() {
+    try {
+      const supportedNetworks = await createWallet();
+
+      // await getSupportedNetworks();
+      console.log("Supported networks:", supportedNetworks);
+    } catch (error) {
+      console.error("Error fetching supported networks:", error);
+    }
+
+    try {
+      const supportedTokens = await getSupportedTokens();
+      console.log("Supported tokens:", supportedTokens);
+    } catch (error) {
+      console.error("Error fetching supported tokens:", error);
+    }
+
+    try {
+      const wallets = await getWallets();
+      console.log("Wallets:", wallets);
+    } catch (error) {
+      console.error("Error fetching wallets:", error);
+    }
+
+    try {
+      const userDetails = await getUserDetails();
+      console.log("User details:", userDetails);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+
+    try {
+      const portfolio = await getPortfolio();
+      console.log("Portfolio:", portfolio);
+    } catch (error) {
+      console.error("Error fetching portfolio:", error);
+    }
+  }
   async function handleLogout() {
     await signOut();
     logOut();
   }
-  async function fetchWallets() {
-    const supportedNetworks = await getSupportedNetworks();
-    const wallets = await getWallets();
-    const supportedTokens = await getSupportedTokens();
-    const userDetails = await getUserDetails();
-    const portfolio = await getPortfolio();
-    console.log({
-      wallets,
-      supportedNetworks,
-      supportedTokens,
-      userDetails,
-      portfolio,
-    });
-  }
   return (
-    <Box
-      backdropFilter={"blur(10px)"}
-      px={5}
-      py={3}
-      pos={"fixed"}
-      top={0}
-      width={"full"}
-      zIndex={1000}
-    >
-      <HStack
-        bg={bgColor}
-        rounded={"full"}
-        px={{ base: 3, md: 4 }}
-        py={{ base: 1, md: 2 }}
-        justify={"space-between"}
+    <>
+      <Box
+        backdropFilter={"blur(10px)"}
+        px={5}
+        py={3}
+        pos={"fixed"}
+        top={0}
+        width={"full"}
+        zIndex={1000}
       >
-        <Box>
-          <Image
-            src="/transparent-app-logo.png"
-            alt="Nova Algo logo"
-            h={"45px"}
-            objectFit={"contain"}
-            w={"100px"}
-          />
-        </Box>
-        <HStack as={"nav"} gap={5} fontWeight={500} color={"white"}>
-          <Link href={"#"} _hover={{ color: "blue.200" }}>
-            Vaults
-          </Link>
-          <Link href={"#"} _hover={{ color: "blue.200" }}>
-            How it works
-          </Link>
-          <Link href={"#"} _hover={{ color: "blue.200" }}>
-            FAQs
-          </Link>
+        <HStack
+          bg={bgColor}
+          rounded={"full"}
+          px={{ base: 3, md: 4 }}
+          py={2}
+          justify={"space-between"}
+        >
+          <Box>
+            <Image
+              src="/transparent-app-logo.png"
+              alt="Nova Algo logo"
+              h={"40px"}
+              objectFit={"contain"}
+              w={"100px"}
+            />
+          </Box>
+          <HStack
+            as={"nav"}
+            gap={5}
+            fontWeight={500}
+            color={"white"}
+            hideBelow={"md"}
+          >
+            <Link href={"#"} _hover={{ color: "blue.200" }}>
+              Vaults
+            </Link>
+            <Link href={"#"} _hover={{ color: "blue.200" }}>
+              How it works
+            </Link>
+            <Link href={"#"} _hover={{ color: "blue.200" }}>
+              FAQs
+            </Link>
+          </HStack>
+          <Box>
+            <HStack gap={3}>
+              {session && (
+                <Button onClick={() => fetchWallets()} ref={triggerRef}>
+                  Logout
+                </Button>
+              )}
+              {!session && (
+                <ResponsivePopoverSheet
+                  title=""
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  onOpen={onOpen}
+                  trigger={
+                    <Button
+                      onClick={() => onOpen()}
+                      size={{ base: "sm", md: "md" }}
+                      isLoading={isLoading}
+                    >
+                      Try Nova Algo Free
+                    </Button>
+                  }
+                  content={
+                    <>
+                      <VStack>
+                        <w3m-button />
+
+                        <Box position="relative" padding="4">
+                          <Divider />
+                          <AbsoluteCenter bg="white" px="4">
+                            or
+                          </AbsoluteCenter>
+                        </Box>
+                        <Button
+                          variant={"outline"}
+                          leftIcon={<FaGoogle />}
+                          onClick={() => showLogin()}
+                        >
+                          Continue with Google
+                        </Button>
+                      </VStack>
+                    </>
+                  }
+                />
+              )}
+              <Box hideFrom={"md"}>
+                <IconButton
+                  size={"sm"}
+                  icon={<LuMenu />}
+                  aria-label="toggle menu"
+                  color={"white"}
+                  variant={"outline"}
+                  _hover={{ color: "blue.200" }}
+                />
+              </Box>
+            </HStack>
+          </Box>
         </HStack>
-        <Box>
-          {session && <Text color={"white"}>Hello {session.user?.name}</Text>}
-          <Text color={"white"}>{isLoggedIn + ""}</Text>
-          {session && <Button onClick={() => handleLogout()}>Logout</Button>}
-          {!session && (
-            <Button onClick={() => showLogin()} isLoading={isLoading}>
-              Try Nova Algo Free
-            </Button>
-          )}
-          {isLoggedIn && <Button onClick={() => fetchWallets()}>Modal</Button>}
-        </Box>
-      </HStack>
-    </Box>
+      </Box>
+    </>
   );
 }

@@ -1,10 +1,7 @@
 import React from "react";
-import {
-  useWeb3Modal,
-  useWeb3ModalEvents,
-  useWeb3ModalAccount,
-} from "@web3modal/solana/react";
+import * as web3modal from "@web3modal/solana/react";
 import ConnectButton from "./ConnectButton";
+const { useWeb3Modal, useWeb3ModalEvents, useWeb3ModalAccount } = web3modal;
 
 type Props = {
   title: string;

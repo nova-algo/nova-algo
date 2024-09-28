@@ -9,6 +9,7 @@ import {
   useColorModeValue,
   Icon,
   Flex,
+  Image,
 } from "@chakra-ui/react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { FaChartLine } from "react-icons/fa";
@@ -34,7 +35,11 @@ export default function Benefits() {
       style={{ opacity }}
     >
       <Container maxW="container.xl">
-        <Flex direction={{ base: "column", lg: "row" }} alignItems="center">
+        <Flex
+          direction={{ base: "column-reverse", lg: "row" }}
+          alignItems="center"
+          gap={5}
+        >
           <Box flex={1} pr={{ base: 0, lg: 12 }} mb={{ base: 12, lg: 0 }}>
             <Heading as="h2" size="2xl" mb={6}>
               Unleash the Power of AI-Driven Trading Vaults
@@ -76,15 +81,16 @@ export default function Benefits() {
           >
             {/* Placeholder for an image or animation */}
             <Box
-              bg="gray.300"
-              h="400px"
+              h={{ base: "auto", md: 400 }}
               w="100%"
               borderRadius="lg"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
+              maxW={{ lg: "none", md: 450 }}
             >
-              <Text>AI Vault Visualization</Text>
+              <Image
+                src="/images/Dashboard.png"
+                alt="Vault"
+                borderRadius={"lg"}
+              />
             </Box>
           </MotionBox>
         </Flex>

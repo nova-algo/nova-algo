@@ -1,32 +1,37 @@
-import { createWeb3Modal, defaultSolanaConfig } from "@web3modal/solana/react";
-import { solana, solanaTestnet, solanaDevnet } from "@web3modal/solana/chains";
+import { createAppKit } from "@reown/appkit/react";
+import { SolanaAdapter } from "@reown/appkit-adapter-solana/react";
+import { solana, solanaTestnet, solanaDevnet } from "@reown/appkit/networks";
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
 
+// 0. Set up Solana Adapter
+const solanaWeb3JsAdapter = new SolanaAdapter({
+  wallets: [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
+});
 export const createWalletConnectModal = () => {
-  // Setup chains
-  const chains = [solana, solanaTestnet, solanaDevnet];
-
   // Your Reown Cloud project ID
-  const projectId = "348a2c1e4e1c8823e911f6f1c137552e";
+  const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID!;
 
-  // Create metadata
+  // 2. Create a metadata object - optional
   const metadata = {
     name: "Nova Algo",
-    description: "AppKit Example",
-    url: "https://reown.com/appkit", // origin must match your domain & subdomain
+    description: "Nova AI-powered Algo Trading",
+    url: process.env.NEXT_PUBLIC_APP_URL!, // origin must match your domain & subdomain
     icons: ["https://assets.reown.com/reown-profile-pic.png"],
   };
 
-  // Create solanaConfig
-  const solanaConfig = defaultSolanaConfig({
-    metadata,
-    chains,
+  // 3. Create modal
+  return createAppKit({
+    adapters: [solanaWeb3JsAdapter],
+    networks: [solana, solanaTestnet, solanaDevnet],
+    metadata: metadata,
     projectId,
-  });
-
-  // Create modal
-  return createWeb3Modal({
-    solanaConfig,
-    chains,
-    projectId,
+    features: {
+      email: false,
+      socials: [],
+      analytics: true, // Optional - defaults to your Cloud configuration
+    },
   });
 };
