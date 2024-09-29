@@ -74,7 +74,7 @@ export const ResponsivePopoverSheet: React.FC<ResponsivePopoverSheetProps> = ({
           <Box>{trigger}</Box>
         </PopoverTrigger>
 
-        <PopoverContent borderRadius="md" boxShadow="lg">
+        <PopoverContent borderRadius="36px" boxShadow="lg">
           <PopoverArrow />
           <PopoverCloseButton />
           <PopoverBody>{renderContent()}</PopoverBody>

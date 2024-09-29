@@ -4,27 +4,46 @@ import {
   AbsoluteCenter,
   Box,
   Button,
+  DarkMode,
   Divider,
+  Drawer,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
   HStack,
   IconButton,
   Image,
+  Text,
+  useBreakpointValue,
   useColorModeValue,
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
 import { signIn, useSession, signOut } from "next-auth/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
 import { ResponsivePopoverSheet } from "./SheetOrPopover";
 import { FaGoogle } from "react-icons/fa";
 import { LuMenu } from "react-icons/lu";
+import * as reown from "@reown/appkit";
+
+import Gradient3DBackground from "./GradientBg";
+import { shortenAddress } from "@/utils";
+import { useDisconnect } from "@web3modal/solana/react";
+import Navbar from "./Navbar";
 
 export default function Header() {
+  const { address } = reown.AccountController.state;
+  const logo = useBreakpointValue({
+    base: "/images/mobile-logo-white.png",
+    md: "/images/desktop-logo-white.png",
+  });
+  const { disconnect } = useDisconnect();
   const bgColor = useColorModeValue("#1b1b1b", "gray.900");
   const [isLoading, setIsLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { data: session } = useSession();
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const {
     isLoggedIn,
     authenticate,
@@ -63,14 +82,12 @@ export default function Header() {
     if (!idToken) {
       return { result: false, error: "No google login" };
     }
-    console.log({ idToken }, "after id token");
+
     return new Promise((resolve) => {
       authenticate(idToken, (result: any, error: any) => {
         if (result) {
-          console.log("Authentication successful");
           resolve({ result: true });
         } else if (error) {
-          console.error("Authentication error:", error);
           resolve({ result: false, error });
         }
       });
@@ -79,8 +96,6 @@ export default function Header() {
 
   async function showLogin() {
     try {
-      console.log({ idToken, session });
-
       setIsLoading(true);
       await signIn("google");
 
@@ -96,6 +111,7 @@ export default function Header() {
       // getUserDetails();
     }
   }, [session]);
+  console.log({ address });
 
   async function fetchWallets() {
     try {
@@ -136,14 +152,15 @@ export default function Header() {
     }
   }
   async function handleLogout() {
-    await signOut();
-    logOut();
+    disconnect();
+    session && (await signOut());
+    isLoggedIn && logOut();
   }
   return (
     <>
       <Box
         backdropFilter={"blur(10px)"}
-        px={5}
+        px={{ base: 2, md: 5 }}
         py={3}
         pos={"fixed"}
         top={0}
@@ -159,38 +176,37 @@ export default function Header() {
         >
           <Box>
             <Image
-              src="/transparent-app-logo.png"
+              src={logo}
               alt="Nova Algo logo"
               h={"40px"}
               objectFit={"contain"}
-              w={"100px"}
+              maxW={"100px"}
             />
           </Box>
-          <HStack
-            as={"nav"}
-            gap={5}
-            fontWeight={500}
-            color={"white"}
-            hideBelow={"md"}
-          >
-            <Link href={"#"} _hover={{ color: "blue.200" }}>
-              Vaults
-            </Link>
-            <Link href={"#"} _hover={{ color: "blue.200" }}>
-              How it works
-            </Link>
-            <Link href={"#"} _hover={{ color: "blue.200" }}>
-              FAQs
-            </Link>
-          </HStack>
+          <Box hideBelow={"md"}>
+            <DarkMode>
+              <Navbar />
+            </DarkMode>
+          </Box>
           <Box>
             <HStack gap={3}>
-              {session && (
-                <Button onClick={() => fetchWallets()} ref={triggerRef}>
-                  Logout
-                </Button>
+              {(session || address) && (
+                <HStack>
+                  <DarkMode>
+                    <Button
+                      size={{ base: "sm", md: "md" }}
+                      gap={2}
+                      variant={"outline"}
+                      colorScheme="gray"
+                      onClick={() => handleLogout()}
+                    >
+                      <Gradient3DBackground />
+                      <Text>{shortenAddress(address || "")}</Text>
+                    </Button>
+                  </DarkMode>
+                </HStack>
               )}
-              {!session && (
+              {!(session || address) && (
                 <ResponsivePopoverSheet
                   title=""
                   isOpen={isOpen}
@@ -230,6 +246,7 @@ export default function Header() {
               )}
               <Box hideFrom={"md"}>
                 <IconButton
+                  onClick={() => onOpen()}
                   size={"sm"}
                   icon={<LuMenu />}
                   aria-label="toggle menu"
@@ -242,6 +259,16 @@ export default function Header() {
           </Box>
         </HStack>
       </Box>
+      <Drawer isOpen={isOpen} onClose={onClose}>
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader></DrawerHeader>
+          <Box pt={10}>
+            <Navbar />
+          </Box>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

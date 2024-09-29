@@ -8,6 +8,7 @@ import {
   Container,
   useColorModeValue,
   HStack,
+  Image,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { LuArrowRight } from "react-icons/lu";
@@ -22,14 +23,13 @@ const Hero = () => {
   return (
     <Box pos={"relative"}>
       {/* Background blobs */}
+
       <MotionBox
         position="absolute"
         top="-10%"
         left="-5%"
         w="30%"
         h="30%"
-        borderRadius="full"
-        bg="blue.400"
         filter="blur(10px)"
         opacity={0.4}
         // animate={{
@@ -41,30 +41,17 @@ const Hero = () => {
         //   repeat: Infinity,
         //   repeatType: "reverse",
         // }}
-      />
-      <MotionBox
-        position="absolute"
-        bottom="-15%"
-        right="-10%"
-        w="40%"
-        h="40%"
-        borderRadius="full"
-        bg="purple.500"
-        filter="blur(10px)"
-        opacity={0.4}
-        // animate={{
-        //   scale: [1, 1.2, 1],
-        //   rotate: [0, -15, 0],
-        // }}
-        // transition={{
-        //   duration: 12,
-        //   repeat: Infinity,
-        //   repeatType: "reverse",
-        // }}
-      />
+      >
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <path
+            fill="#0099ff"
+            d="M42.1,-68.5C51.3,-59.7,53.1,-42.4,55,-28.1C56.9,-13.8,59,-2.5,61.3,11.6C63.6,25.7,66.1,42.6,60.6,57.1C55.2,71.6,41.6,83.7,27.5,82.8C13.4,81.9,-1.2,68,-17.4,62C-33.6,56,-51.2,57.8,-64.3,51.1C-77.3,44.3,-85.8,28.9,-87,13.2C-88.2,-2.5,-82.1,-18.6,-71.4,-28.7C-60.7,-38.7,-45.3,-42.7,-32.6,-49.8C-20,-57,-10,-67.4,3.3,-72.5C16.5,-77.5,33,-77.3,42.1,-68.5Z"
+            transform="translate(100 100)"
+          />
+        </svg>
+      </MotionBox>
 
-      {/* Hero Section */}
-      <Container maxW="container.xl" centerContent>
+      <Container maxW="container.xl" centerContent pos={"relative"}>
         <VStack
           spacing={8}
           alignItems="center"
@@ -92,10 +79,10 @@ const Hero = () => {
               // align={"center"}
               justify={"center"}
             >
-              <Link
+              <MotionButton
                 href="/sign-up"
                 size={"lg"}
-                as={MotionButton}
+                as={Link}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 colorScheme="blue"
@@ -114,7 +101,7 @@ const Hero = () => {
                 >
                   <LuArrowRight />
                 </Box>
-              </Link>
+              </MotionButton>
               <Button size={"lg"} colorScheme="blue" variant="outline" px={8}>
                 See How it works
               </Button>
@@ -122,6 +109,18 @@ const Hero = () => {
           </MotionBox>
         </VStack>
       </Container>
+      <Box mt={{ md: 10 }} pos={"relative"}>
+        <Image
+          display={"inline-block"}
+          src="/images/wave.svg"
+          alt="Hero Image"
+          pos={"absolute"}
+          bottom={0}
+          left={0}
+          right={0}
+          w={"100vw"}
+        />
+      </Box>
     </Box>
   );
 };
