@@ -19,6 +19,7 @@ import json
 import logging
 import asyncio
 from typing import Dict, List, Optional, Tuple, Union
+from dotenv import load_dotenv
 
 from anchorpy import Wallet # type: ignore
 from solders.keypair import Keypair # type: ignore
@@ -39,7 +40,7 @@ from driftpy.types import (
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
-from driftpy.account_subscription_config import AccountSubscriptionConfig
+from driftpy.account_subscription_config import AccountSubscriptionConfig, BulkAccountLoader
 from driftpy.constants.config import configs
 from driftpy.constants.perp_markets import (devnet_perp_market_configs, mainnet_perp_market_configs)
 from driftpy.constants.spot_markets import (devnet_spot_market_configs, mainnet_spot_market_configs)
@@ -55,6 +56,7 @@ from driftpy.math.perp_position import (
     calculate_base_asset_value,
     is_available
 )
+from driftpy.keypair import load_keypair
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
@@ -80,7 +82,8 @@ class DriftAPI:
         self.env = env
         self.drift_client = None
         self.user_account: UserAccount | None = None  # Initialize it as None
-
+        self.connection = None
+        self.keypair = None
     async def initialize(self, subscription_type: str = "polling") -> None:
         """
         Initializes the connection to the Drift protocol.
@@ -91,40 +94,51 @@ class DriftAPI:
         Args:
             subscription_type (str, optional): The type of subscription for account updates. Defaults to "polling".
         """
-        keypath = os.environ.get("DRIFT_WALLET_PRIVATE_KEY")
-        with open(os.path.expanduser(keypath), "r") as f:
-            secret = json.load(f)
-
+        
+        load_dotenv()
+        keypath = os.getenv("DRIFT_WALLET_PRIVATE_KEY")
+        url = os.getenv("RPC_URL")
+        
+        if not keypath:
+            raise ValueError("DRIFT_WALLET_PRIVATE_KEY not set in environment variables")
+        if not url:
+            raise ValueError("RPC_URL not set in environment variables")
+        try:
+            with open(os.path.expanduser(keypath), "r") as f:
+                secret = json.load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Private key file not found at {keypath}")
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON in private key file at {keypath}")
+        
         kp = Keypair.from_bytes(bytes(secret))
-        logger.info(f"Using public key: {kp.pubkey()}")
 
         wallet = Wallet(kp)
 
-         # Check if the keypath is provided or set in the environment variable
-        if keypath is None:
-            if os.environ["ANCHOR_WALLET"] is None:
-                raise NotImplementedError("need to provide keypath or set ANCHOR_WALLET")
-            else:
-                keypath = os.environ["ANCHOR_WALLET"]
+        logger.info(f"Using public key: {kp.pubkey()}")
 
-        #Set the appropriate URL based on the environment (devnet or mainnet)
-        if self.env == "devnet":
-            url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
-        elif self.env == "mainnet":
-            url = "https://mainnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
-        else:
-            raise NotImplementedError("only devnet/mainnet env supported")
+
+        # #Set the appropriate URL based on the environment (devnet or mainnet)
+        # if self.env == "devnet":
+        #     url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+        # elif self.env == "mainnet":
+        #     url = "https://mainnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
+        # else:
+        #     raise NotImplementedError("only devnet/mainnet env supported")
             
-        connection = AsyncClient(url)
+        self.connection = AsyncClient(url)
+        bulk_account_loader = BulkAccountLoader(self.connection)
 
         self.drift_client = DriftClient(
-            connection,
+            self.connection,
             wallet,
-            self.env,
-            account_subscription=AccountSubscriptionConfig(subscription_type),
+            #self.env,
+            "devnet",
+            account_subscription=AccountSubscriptionConfig(subscription_type, bulk_account_loader=bulk_account_loader),
         )
         
         await self.drift_client.initialize_user()
+        logger.info("Drift client user initialized successfully")
 
         # Add the user with the specified subaccount ID and subscribe to updates
         # await self.drift_client.add_user(subaccount_id)
