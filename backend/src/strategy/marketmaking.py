@@ -1,109 +1,162 @@
 import asyncio
 import logging
-import os
 import time
-from datetime import datetime
+from typing import Dict, List, Tuple
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
+import numpy as np
+import requests
+import pandas as pd
+from io import StringIO
+from driftpy.types import OrderType, OrderParams, PositionDirection, MarketType # type: ignore
+from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
+from src.api.drift.api import DriftAPI
+from src.common.types import MarketMakerConfig, Bot
+from typing import Optional
 
-from dotenv import load_dotenv
-
-from api import DriftAPI
-from driftpy.types import MarketType, OrderType, OrderParams, PositionDirection
-from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION
-
-# Set up logging
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class MarketMakingStrategy(Bot):
-    def __init__(self, 
-                drift_api: DriftAPI, 
-                market_symbol: str,
-                sub_account_id: int,
-                max_position_size: Decimal,
-                target_spread: Decimal,
-                order_size: Decimal,
-                update_interval: float,
-                volatility_threshold: Decimal):
+class MarketMaker(Bot):
+    def __init__(self, drift_api: DriftAPI, config: MarketMakerConfig):
         """
-        Initialize the Market Making Strategy.
+        Initialize the MarketMaker class.
 
-        :param drift_api: The DriftAPI instance for interacting with the Drift protocol
-        :param market_symbol: The symbol of the market (e.g., 'SOL-PERP')
-        :param sub_account_id: The sub-account ID to use for trading
-        :param max_position_size: Maximum allowed position size
-        :param target_spread: Target spread as a decimal (e.g., 0.002 for 0.2%)
-        :param order_size: Size of each order
-        :param update_interval: Time between order updates in seconds
-        :param volatility_threshold: Threshold for considering the market volatile
+        :param drift_api: Instance of DriftAPI for interacting with the Drift protocol
+        :param config: Configuration for the market making strategy
         """
         self.drift_api = drift_api
-        self.market_symbol = market_symbol
-        self.sub_account_id = sub_account_id
-        self.max_position_size = max_position_size
-        self.target_spread = target_spread
-        self.order_size = order_size
-        self.update_interval = update_interval
-        self.volatility_threshold = volatility_threshold
+        self.config = config
+        self.market_index = config.market_indexes[0]
+        self.current_orders: Dict[int, OrderParams] = {}
+        self.position_size = Decimal('0')
+        self.last_trade_price = None
+        self.order_book: Dict[str, List[Tuple[Decimal, Decimal]]] = {'bids': [], 'asks': []}
+        
+        self.health_check_interval = 60
+        self.last_health_check = 0
+        self.is_healthy = True
+        self.is_running = False
+        
+        self.historical_data = None
+        
+    async def init(self):
+        """
+        Initialize the market maker by setting up the market index and initial position.
+        """
+        # Initialize the position
+        position = await self.drift_api.get_position(self.market_index)
+        if position:
+            self.position_size = Decimal(str(position.base_asset_amount)) / BASE_PRECISION
+        
+        logger.info(f"Initialized market maker for {self.config.symbol} (Market Index: {self.market_index})")
+        logger.info(f"Initial position size: {self.position_size}")
+        
+        # Fetch historical data
+        await self.fetch_historical_data()
 
-        self.market_index = 0 #[0]  is SOL-PERP
-        self.market_type = 0 #[0]  is SOL-PERP
-        self.last_update_time = 0
-        self.last_oracle_price = Decimal(0)
-        self.current_position = Decimal(0)
-        self.open_orders: Dict[str, OrderParams] = {}
+    async def reset(self):
+        """
+        Reset the market maker state and cancel all existing orders.
+        """
+        logger.info("Resetting market maker...")
+        self.is_running = False
 
-        self.health_check_interval = 60  # seconds
+        # Cancel all existing orders
+        await self.cancel_all_orders()
+
+        # Reset internal state
+        self.current_orders.clear()
+        self.position_size = Decimal('0')
+        self.last_trade_price = None
+        self.order_book = {'bids': [], 'asks': []}
         self.last_health_check = 0
         self.is_healthy = True
 
-    async def initialize(self):
-        """
-        Initialize the market maker by setting up the market index and type.
-        """
-        self.market_index = await self.drift_api.get_market_index_by_symbol(self.market_symbol)
-        market = self.drift_api.get_market(self.market_index)
-        self.market_type = market.market_type
-        logger.info(f"Initialized market making for {self.market_symbol} (index: {self.market_index}, type: {self.market_type})")
+        # Re-initialize position
+        await self.update_position()
+        
+        # Refresh historical data
+        await self.fetch_historical_data()
 
-    async def run(self):
+        logger.info("Market maker reset complete.")
+        self.is_running = True
+        
+    async def fetch_historical_data(self):
         """
-        Main loop for the market maker. Continuously update orders and perform health checks.
+        Fetch historical trade data from the provided URL.
         """
-        while True:
+        url = 'https://drift-historical-data-v2.s3.eu-west-1.amazonaws.com/program/dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH/user/FrEFAwxdrzHxgc7S4cuFfsfLmcg8pfbxnkCQW83euyCS/tradeRecords/2023/20230201'
+        
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            
+            # Parse CSV data
+            csv_data = StringIO(response.text)
+            df = pd.read_csv(csv_data)
+            
+            # Process the data as needed
+            # For example, you might want to convert timestamps, filter by market, etc.
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+            df = df[df['marketIndex'] == self.market_index]
+            
+            self.historical_data = df
+            logger.info(f"Successfully fetched and processed historical data. Shape: {df.shape}")
+        except Exception as e:
+            logger.error(f"Failed to fetch historical data: {str(e)}")
+
+    async def analyze_historical_data(self):
+        """
+        Analyze the historical data to inform trading decisions.
+        """
+        if self.historical_data is None or self.historical_data.empty:
+            logger.warning("No historical data available for analysis.")
+            return
+        
+        # Example analysis: Calculate average trade size and price
+        avg_trade_size = self.historical_data['size'].mean()
+        avg_trade_price = self.historical_data['price'].mean()
+        
+        logger.info(f"Historical data analysis - Avg trade size: {avg_trade_size}, Avg trade price: {avg_trade_price}")
+        
+        # You can use these insights to adjust your trading parameters
+        # For example, you might adjust your order size based on the average trade size:
+        self.config.order_size = max(self.config.order_size, Decimal(str(avg_trade_size / 2)))
+        
+        # Or adjust your spread based on historical price volatility:
+        price_std = self.historical_data['price'].std()
+        self.config.base_spread = max(self.config.base_spread, Decimal(str(price_std / 100)))  # 1% of price standard deviation
+
+
+    async def start_interval_loop(self, interval_ms: Optional[int] = 1000):
+        """
+        Start the main loop for the market making strategy.
+        """
+        self.is_running = True
+        while self.is_running:
             try:
-                await self.update_orders()
-                await self.perform_health_check()
-                await asyncio.sleep(self.update_interval)
+                await self.health_check()
+                if not self.is_healthy:
+                    logger.warning("Health check failed. Attempting to reset...")
+                    await self.reset()
+                    continue
+
+                await self.update_order_book()
+                await self.update_position()
+                await self.manage_inventory()
+                await self.place_orders()
+                
+                # Update last trade price
+                market = self.drift_api.get_market(self.market_index)
+                self.last_trade_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+                
+                await asyncio.sleep(interval_ms / 1000)
             except Exception as e:
-                logger.error(f"Error in main loop: {e}")
-                self.is_healthy = False
-                await asyncio.sleep(5)  # Wait before retrying
+                logger.error(f"An error occurred: {str(e)}")
+                await asyncio.sleep(10)  # Wait for 10 seconds before retrying
 
-    async def update_orders(self):
-        """
-        Update the market maker's orders based on current market conditions and position.
-        """
-        oracle_price, best_bid, best_ask = await self.get_market_data()
-        bid_price, ask_price = self.calculate_order_prices(oracle_price)
-        
-        current_position, _, _, _, _, _ = await self.drift_api.get_position_and_maxpos(self.market_index, 1)
-        
-        if self.is_market_volatile(oracle_price):
-            logger.info("Market is volatile. Adjusting orders.")
-            # Implement logic for handling volatile markets
-
-        bid_size, ask_size = self.adjust_position(oracle_price)
-
-        await self.drift_api.cancel_all_orders()
-
-        if bid_size > 0:
-            await self.place_order(True, bid_price, bid_size)
-        if ask_size > 0:
-            await self.place_order(False, ask_price, ask_size)
-
-    async def perform_health_check(self):
+    async def health_check(self):
         """
         Perform a health check on the market maker.
         """
@@ -112,105 +165,168 @@ class MarketMakingStrategy(Bot):
             self.last_health_check = current_time
             
             try:
-                await self.get_market_data()
+                await self.drift_api.get_market(self.market_index)
                 self.is_healthy = True
             except Exception as e:
                 logger.error(f"Health check failed: {e}")
                 self.is_healthy = False
 
-    async def get_market_data(self) -> Tuple[Decimal, Decimal, Decimal]:
-        """
-        Fetch current market data including oracle price, bid, and ask prices.
 
-        :return: Tuple of (oracle_price, best_bid, best_ask)
+    async def update_order_book(self):
         """
+        Update the local order book with the latest market data.
+        """
+        # In a real implementation, you would fetch the order book from the API
+        # For this example, we'll simulate it with some dummy data
         market = self.drift_api.get_market(self.market_index)
-        oracle_price = Decimal(market.oracle_price) / PRICE_PRECISION
-        best_bid = Decimal(market.amm.bid_price) / PRICE_PRECISION
-        best_ask = Decimal(market.amm.ask_price) / PRICE_PRECISION
-        return oracle_price, best_bid, best_ask
-
-    def calculate_order_prices(self, oracle_price: Decimal) -> Tuple[Decimal, Decimal]:
-        """
-        Calculate bid and ask prices based on the oracle price and target spread.
-
-        :param oracle_price: Current oracle price
-        :return: Tuple of (bid_price, ask_price)
-        """
-        half_spread = self.target_spread / 2
-        bid_price = oracle_price * (1 - half_spread)
-        ask_price = oracle_price * (1 + half_spread)
-        return bid_price, ask_price
-
-    def is_market_volatile(self, oracle_price: Decimal) -> bool:
-        """
-        Determine if the market is currently volatile.
-
-        :param oracle_price: Current oracle price
-        :return: True if the market is volatile, False otherwise
-        """
-        if self.last_oracle_price == Decimal(0):
-            self.last_oracle_price = oracle_price
-            return False
-
-        price_change = abs(oracle_price - self.last_oracle_price) / self.last_oracle_price
-        self.last_oracle_price = oracle_price
-        return price_change > self.volatility_threshold
-
-    async def place_order(self, is_buy: bool, price: Decimal, size: Decimal) -> Optional[str]:
-        """
-        Place a new order on the Drift exchange.
-
-        :param is_buy: True for buy order, False for sell order
-        :param price: Order price
-        :param size: Order size
-        :return: Order ID if successful, None otherwise
-        """
-        return await self.drift_api.limit_order(
-            self.market_index,
-            is_buy,
-            int(size * BASE_PRECISION),
-            int(price * PRICE_PRECISION),
-            False  # reduce_only
-        )
-
-    def adjust_position(self, oracle_price: Decimal) -> Tuple[Decimal, Decimal]:
-        """
-        Adjust the current position based on risk management rules.
-
-        :param oracle_price: Current oracle price
-        :return: Tuple of (bid_size, ask_size) to maintain or adjust the position
-        """
-        # Implement position adjustment logic here
-        # This is a placeholder implementation
-        available_bid_size = (self.max_position_size - self.current_position) / 2
-        available_ask_size = (self.max_position_size + self.current_position) / 2
+        mid_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
         
-        bid_size = min(self.order_size, available_bid_size)
-        ask_size = min(self.order_size, available_ask_size)
+        self.order_book = {
+            'bids': [(mid_price - Decimal('0.01') * i, Decimal('10')) for i in range(1, 6)],
+            'asks': [(mid_price + Decimal('0.01') * i, Decimal('10')) for i in range(1, 6)]
+        }
         
-        return bid_size, ask_size
+        logger.info(f"Updated order book - Mid price: {mid_price}")
 
-# Main execution
+    def calculate_dynamic_spread(self) -> Decimal:
+        """
+        Calculate the dynamic spread based on current market conditions and inventory.
+
+        :return: The calculated spread as a Decimal
+        """
+        # Base spread
+        spread = self.config.base_spread
+        
+        # Adjust spread based on inventory risk
+        inventory_risk = abs(self.position_size - self.config.inventory_target) / self.config.max_position_size
+        spread += self.config.risk_factor * inventory_risk
+        
+        # Adjust spread based on market volatility
+        if self.last_trade_price:
+            market = self.drift_api.get_market(self.market_index)
+            current_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+            price_change = abs(current_price - self.last_trade_price) / self.last_trade_price
+            spread += price_change * Decimal('0.5')  # Increase spread by 50% of the price change
+        
+        logger.info(f"Calculated dynamic spread: {spread}")
+        return spread
+
+    def calculate_order_prices(self) -> Tuple[List[Decimal], List[Decimal]]:
+        """
+        Calculate the prices for buy and sell orders based on the current market and spread.
+
+        :return: Two lists of Decimals, representing buy and sell prices
+        """
+        spread = self.calculate_dynamic_spread()
+        market = self.drift_api.get_market(self.market_index)
+        mid_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+        
+        half_spread = spread / 2
+        buy_prices = [mid_price - half_spread - Decimal('0.01') * i for i in range(self.config.num_levels)]
+        sell_prices = [mid_price + half_spread + Decimal('0.01') * i for i in range(self.config.num_levels)]
+        
+        logger.info(f"Calculated order prices - Buy: {buy_prices}, Sell: {sell_prices}")
+        return buy_prices, sell_prices
+
+    async def place_orders(self):
+        """
+        Place new orders based on the calculated prices and current market conditions.
+        """
+        await self.cancel_all_orders()
+        
+        buy_prices, sell_prices = self.calculate_order_prices()
+        
+        for i in range(self.config.num_levels):
+            # Place buy order
+            buy_params = OrderParams(
+                order_type=OrderType.Limit(),
+                market_type=self.config.market_type,
+                direction=PositionDirection.Long(),
+                base_asset_amount=int(self.config.order_size * BASE_PRECISION),
+                price=int(buy_prices[i] * PRICE_PRECISION),
+                market_index=self.market_index,
+                reduce_only=False
+            )
+            buy_order = await self.drift_api.drift_client.place_order(buy_params)
+            self.current_orders[buy_order.order_id] = buy_params
+            
+            # Place sell order
+            sell_params = OrderParams(
+                order_type=OrderType.Limit(),
+                market_type=self.config.market_type,
+                direction=PositionDirection.Short(),
+                base_asset_amount=int(self.config.order_size * BASE_PRECISION),
+                price=int(sell_prices[i] * PRICE_PRECISION),
+                market_index=self.market_index,
+                reduce_only=False
+            )
+            sell_order = await self.drift_api.drift_client.place_order(sell_params)
+            self.current_orders[sell_order.order_id] = sell_params
+        
+        logger.info(f"Placed {len(self.current_orders)} orders")
+
+    async def cancel_all_orders(self):
+        """
+        Cancel all existing orders.
+        """
+        await self.drift_api.cancel_all_orders()
+        self.current_orders.clear()
+        logger.info("Cancelled all existing orders")
+
+    async def manage_inventory(self):
+        """
+        Manage inventory by adjusting position size towards the target.
+        """
+        if abs(self.position_size - self.config.inventory_target) > self.config.order_size:
+            direction = PositionDirection.Short() if self.position_size > self.config.inventory_target else PositionDirection.Long()
+            size = min(abs(self.position_size - self.config.inventory_target), self.config.max_position_size - abs(self.position_size))
+            
+            order_params = OrderParams(
+                order_type=OrderType.Market(),
+                market_type=self.config.market_type,
+                direction=direction,
+                base_asset_amount=int(size * BASE_PRECISION),
+                market_index=self.market_index,
+                reduce_only=False
+            )
+            
+            await self.drift_api.drift_client.place_order(order_params)
+            logger.info(f"Placed inventory management order: {'sell' if direction == PositionDirection.Short() else 'buy'} {size}")
+
+    async def update_position(self):
+        """
+        Update the current position size.
+        """
+        position = await self.drift_api.get_position(self.market_index)
+        if position:
+            self.position_size = Decimal(str(position.base_asset_amount)) / BASE_PRECISION
+        else:
+            self.position_size = Decimal('0')
+        logger.info(f"Updated position size: {self.position_size}")
+
 async def main():
-    # Load environment variables
-    load_dotenv()
-    
-    # Initialize DriftAPI
     drift_api = DriftAPI(env="mainnet")
-    await drift_api.initialize(subscription_type="websocket")
-
-    # Initialize and run the market maker
-    market_maker = MarketMakingStrategy(
-        drift_api=drift_api,
-        market_symbol="SOL-PERP",
-        sub_account_id=0,
-        max_position_size=Decimal("10"),  # 10 SOL max position
-        target_spread=Decimal("0.002"),  # 0.2% spread
-        order_size=Decimal("0.1"),  # 0.1 SOL per order
-        update_interval=5.0,  # Update every 5 seconds
-        volatility_threshold=Decimal("0.005")  # 0.5% price change threshold
+    await drift_api.initialize()
+    
+    config = MarketMakerConfig(
+        bot_id="mm_bot_1",
+        strategy_type="market_making",
+        market_indexes=[0],  # Assuming SOL-PERP is at index 0
+        sub_accounts=[0],  # Assuming using the first sub-account
+        market_type=MarketType.Perp(),
+        symbol="SOL-PERP",
+        timeframe="5m",
+        max_position_size=Decimal('100'),
+        order_size=Decimal('1'),
+        num_levels=5,
+        base_spread=Decimal('0.001'),  # 0.1% initial spread
+        risk_factor=Decimal('0.005'),
+        inventory_target=Decimal('0')
     )
+    
+    market_maker = MarketMaker(drift_api, config)
+    await market_maker.init()
+    await market_maker.start_interval_loop()
 
-    await market_maker.initialize()
-    await market_maker.run()
+if __name__ == "__main__":
+    asyncio.run(main())
