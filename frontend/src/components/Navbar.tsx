@@ -1,9 +1,5 @@
 import { Link } from "@chakra-ui/next-js";
-import {
-  HStack,
-  StackDirection,
-  useBreakpointValue,
-} from "@chakra-ui/react";
+import { HStack, StackDirection, useBreakpointValue } from "@chakra-ui/react";
 
 export default function Navbar() {
   const dir = useBreakpointValue({
@@ -16,19 +12,16 @@ export default function Navbar() {
   });
   const NavLinks = () => (
     <HStack as={"nav"} gap={5} fontWeight={500} flexDir={dir} color={color}>
-      <Link href={"#"} _hover={{ color: "blue.300" }}>
+      <Link href={"/vaults"} _hover={{ color: "blue.300" }}>
         Vaults
       </Link>
-      <Link href={"#"} _hover={{ color: "blue.300" }}>
+      <Link href={"/how-it-works"} _hover={{ color: "blue.300" }}>
         How it works
       </Link>
-      <Link href={"#"} _hover={{ color: "blue.300" }}>
+      <Link href={"/faqs"} _hover={{ color: "blue.300" }}>
         FAQs
       </Link>
     </HStack>
   );
-  return (
-  <NavLinks />
-   
-  );
+  return <NavLinks />;
 }
