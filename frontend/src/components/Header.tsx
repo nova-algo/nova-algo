@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Link } from "@chakra-ui/next-js";
+
 import {
   AbsoluteCenter,
   Box,
