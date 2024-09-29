@@ -84,6 +84,7 @@ class DriftAPI:
         self.user_account: UserAccount | None = None  # Initialize it as None
         self.connection = None
         self.keypair = None
+        
     async def initialize(self, subscription_type: str = "polling") -> None:
         """
         Initializes the connection to the Drift protocol.
