@@ -1,6 +1,7 @@
 import { AnimatedSVG } from "@/components/AnimatedLogo";
 import Homepage from "@/components/Homepage";
 import { Box } from "@chakra-ui/react";
+import Head from "next/head";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -22,5 +23,14 @@ export default function Home() {
         <AnimatedSVG />
       </Box>
     );
-  return <Homepage />;
+  return (
+    <>
+      <Head>
+        <title>Nova Algo | Advanced Trading Vaults For Everyone</title>
+        <meta name="description" content=" Nova Algo is an Advanced Trading App built for Everyone, Trade like a pro with Nova Algo"/>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <Homepage />
+    </>
+  );
 }
