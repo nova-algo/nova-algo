@@ -37,7 +37,7 @@ export default function VaultPage({
   vault,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { balance, balanceSymbol } = useAppContext();
-  const bgColor = useColorModeValue("white", "gray.800");
+  // const bgColor = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue("gray.800", "white");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
@@ -176,7 +176,7 @@ export default function VaultPage({
           wrap={{ lg: "nowrap", base: "wrap" }}
           justify="space-between"
           maxW="1350px"
-          px={{ lg: 6, md: 5, sm: 4 }}
+          px={{ lg: 6, md: 5, base: 2 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
@@ -207,7 +207,7 @@ export default function VaultPage({
             </TabList>
 
             <TabPanels>
-              <TabPanel>
+              <TabPanel px={{ base: 0, md: 4 }}>
                 <Stack gap={5} flex={1}>
                   <SectionHeading
                     title="Performance Breakdown"

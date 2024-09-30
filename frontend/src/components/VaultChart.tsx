@@ -105,8 +105,9 @@ const VaultChart: React.FC = () => {
       transition={{ duration: 0.5 }}
       bg={bgColor}
       borderRadius="xl"
-      p={{ base: 3, md: 6 }}
-      boxShadow="xl"
+      py={{ base: 4, md: 5 }}
+      px={{ base: 2, md: 4, lg: 6 }}
+      boxShadow="lg"
     >
       <HStack justifyContent="space-between" mb={4} wrap={"wrap"}>
         <Text fontSize="2xl" fontWeight="bold" color={textColor}>
@@ -120,6 +121,7 @@ const VaultChart: React.FC = () => {
           />
           <Menu>
             <MenuButton
+              size={{ base: "sm", md: "md" }}
               as={Button}
               rightIcon={<BsChevronDown />}
               variant="outline"
@@ -147,7 +149,7 @@ const VaultChart: React.FC = () => {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
           >
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">

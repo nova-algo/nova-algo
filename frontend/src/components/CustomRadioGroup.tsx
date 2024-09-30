@@ -26,6 +26,7 @@ export const CustomRadioGroup = ({
       {options.map((option) => (
         <Button
           key={option}
+          size={{ base: "sm", md: "md" }}
           onClick={() => onChange(option)}
           bg={val === option ? activeColor : bgColor}
           color={val === option ? "white" : "gray.600"}
