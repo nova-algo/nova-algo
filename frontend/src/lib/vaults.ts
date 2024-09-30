@@ -23,7 +23,7 @@ export const vaults: Vault[] = [
   {
     id: "1",
     name: "Alpha Vault",
-    description: "High-risk, high-reward AI-driven strategy",
+    description: "High-risk, high-reward Advanced strategy",
     performance: "+25% YTD",
     avatar: "/images/drift.webp",
     risk: "**Market Risk**\n\nAlpha Vault is exposed to market risk as it takes directional positions based on supply and demand zones. If the market moves against the predicted direction, the strategy may incur losses. Sudden market shifts or unexpected events can invalidate the identified zones, leading to potential losses.\n\n**Liquidity Risk**\n\nThe strategy relies on the liquidity available on the Drift protocol to execute its trades. If there is insufficient liquidity at the desired price levels, the strategy may face difficulties in entering or exiting positions, potentially impacting its profitability. Low liquidity can also result in slippage, where the actual execution price differs from the intended price.\n\n**Technical Risk**\n\nAs the strategy is implemented using code and interacts with the Drift protocol, it is subject to technical risks such as software bugs, vulnerabilities, or failures in the underlying blockchain infrastructure. Any issues or disruptions in the code or the Drift protocol could lead to unexpected behavior or losses for the strategy.",

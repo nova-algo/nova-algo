@@ -32,11 +32,11 @@ const VaultsPage: React.FC = () => {
         <Container maxW="container.xl">
           <VStack spacing={8} align="stretch">
             <Heading as="h1" size="2xl" textAlign="center" mb={4}>
-              Our AI-Powered Vaults
+              Our Advanced Vaults
             </Heading>
             <Text fontSize="xl" textAlign="center" mb={8}>
               Explore our range of automated trading vaults, each powered by
-              advanced AI algorithms.
+              advanced algorithms.
             </Text>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10}>
               {vaults.map((vault) => (
