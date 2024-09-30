@@ -36,18 +36,12 @@ export const ResponsivePopoverSheet: React.FC<ResponsivePopoverSheetProps> = ({
 }) => {
   const [isPopover, setIsPopover] = useState(true);
 
-  // Use Chakra's useBreakpointValue to determine if we should show a popover or sheet
+  // Use useBreakpointValue to determine if we should show a popover or sheet
   const variant = useBreakpointValue({ base: "sheet", md: "popover" });
-  console.log("variant", variant);
+
   useEffect(() => {
     setIsPopover(variant === "popover");
   }, [variant]);
-  console.log("isPopover", isPopover);
-  // const handleToggle = () => {
-  //   if (isPopover || !isOpen) {
-  //     onToggle();
-  //   }
-  // };
 
   const renderContent = () => (
     <VStack align="stretch" spacing={4} p={4}>
@@ -55,11 +49,7 @@ export const ResponsivePopoverSheet: React.FC<ResponsivePopoverSheetProps> = ({
       {content}
     </VStack>
   );
-  useEffect(() => {
-    if (!isPopover && isOpen) {
-      document.body.style.overflow = "hidden";
-    }
-  });
+
   return (
     <>
       <Popover
@@ -108,6 +98,7 @@ export const ResponsivePopoverSheet: React.FC<ResponsivePopoverSheetProps> = ({
               <HStack justify={"flex-end"}>
                 <IconButton
                   aria-label="Close"
+                  fontWeight={400}
                   variant={"ghost"}
                   icon={<LuXCircle size={24} />}
                   onClick={onClose}

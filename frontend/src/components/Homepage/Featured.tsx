@@ -67,15 +67,15 @@ const Featured = () => {
             Why Choose Nova Algo?
           </Heading>
           <Text fontSize="xl" textAlign="center" mb={12} maxW="2xl">
-            Experience the power of AI-driven automated vaults, designed to
+            Experience the power of Advanced automated vaults, designed to
             optimize your trading portfolio.
           </Text>
         </MotionFlex>
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={10}>
           <FeatureCard
             icon={FaRobot}
-            title="AI-Powered Vaults"
-            description="Our advanced algorithms manage your portfolio, executing trades with precision and adaptability."
+            title="Advanced automated Vaults"
+            description="Our advanced automated vaults manages your portfolio, executing trades with precision and adaptability."
           />
           <FeatureCard
             icon={FaChartLine}
@@ -90,7 +90,7 @@ const Featured = () => {
           <FeatureCard
             icon={FaClock}
             title="24/7 Automation"
-            description="Our AI works tirelessly, optimizing your portfolio around the clock, even while you sleep."
+            description="Our automated vaults optimizes your portfolio around the clock, even while you sleep."
           />
         </SimpleGrid>
       </Container>

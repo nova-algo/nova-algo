@@ -35,9 +35,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setBalanceSymbol(reown.AccountController.state.balanceSymbol!);
     setAddress(reown.AccountController.state.address!);
   }, []);
-  useEffect(() => {
-    console.log(reown.AccountController.state.status);
-  }, []);
+
   return (
     <AppContext.Provider
       value={{

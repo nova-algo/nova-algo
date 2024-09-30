@@ -284,12 +284,7 @@ export default function VaultPage({
             w={{ base: "full", lg: "auto" }}
             maxW={{ base: "600", lg: 400 }}
           >
-            <DepositOrWithdrawalBox
-              // walletToken={walletToken}
-              // walletBalance={walletBalance}
-              width="full"
-              maxW="auto"
-            />
+            <DepositOrWithdrawalBox />
           </Box>
         </MotionFlex>
       </MotionBox>

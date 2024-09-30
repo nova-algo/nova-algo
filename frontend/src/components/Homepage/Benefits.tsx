@@ -13,6 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { FaChartLine } from "react-icons/fa";
+import { Link } from "@chakra-ui/next-js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MotionBox = motion.create(Box as any);
@@ -23,7 +24,7 @@ export default function Benefits() {
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 200], [0, 1]);
   const benefits = [
-    "Maximize returns through AI optimization",
+    "Maximize returns through optimized automation",
     "Minimize risks with intelligent diversification",
     "Save time with full automation",
     "Stay ahead of the market with adaptive strategies",
@@ -62,16 +63,18 @@ export default function Benefits() {
                 </MotionFlex>
               ))}
             </VStack>
-            <Button
-              as={motion.button}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              size="lg"
-              colorScheme="blue"
-              mt={8}
-            >
-              Explore Our Vaults
-            </Button>
+            <Link href={"/vaults"}>
+              <Button
+                as={motion.button}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                size="lg"
+                colorScheme="blue"
+                mt={8}
+              >
+                Explore Our Vaults
+              </Button>
+            </Link>
           </Box>
           <MotionBox
             flex={1}
