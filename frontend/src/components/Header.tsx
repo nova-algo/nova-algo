@@ -32,9 +32,11 @@ import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
 import { useDisconnect } from "@web3modal/solana/react";
 import Navbar from "./Navbar";
+import { useAppContext } from "@/context/app-context";
 
 export default function Header() {
-  const { address } = reown.AccountController.state;
+  const { address, balance } = useAppContext();
+
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
@@ -43,6 +45,11 @@ export default function Header() {
   const bgColor = useColorModeValue("#1b1b1b", "gray.900");
   const [isLoading, setIsLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isNavbarOpen,
+    onOpen: onNavbarOpen,
+    onClose: onNavbarClose,
+  } = useDisclosure();
   const { data: session } = useSession();
   const {
     isLoggedIn,
@@ -111,7 +118,6 @@ export default function Header() {
       // getUserDetails();
     }
   }, [session]);
-  console.log({ address });
 
   async function fetchWallets() {
     try {
@@ -246,7 +252,7 @@ export default function Header() {
               )}
               <Box hideFrom={"md"}>
                 <IconButton
-                  onClick={() => onOpen()}
+                  onClick={() => onNavbarOpen()}
                   size={"sm"}
                   icon={<LuMenu />}
                   aria-label="toggle menu"
@@ -259,7 +265,7 @@ export default function Header() {
           </Box>
         </HStack>
       </Box>
-      <Drawer isOpen={isOpen} onClose={onClose}>
+      <Drawer isOpen={isNavbarOpen} onClose={onNavbarClose}>
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />

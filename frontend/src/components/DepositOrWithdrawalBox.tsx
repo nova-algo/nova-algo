@@ -29,7 +29,7 @@ const TradeTypeBox = ({
   walletToken,
   type,
 }: {
-  walletBalance: number;
+  walletBalance: string;
   walletToken: string;
   type: "deposit" | "withdrawal";
 }) => {
@@ -38,7 +38,7 @@ const TradeTypeBox = ({
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const textColor = useColorModeValue("gray.800", "white");
-
+  const _walletBalance = (+walletBalance).toFixed(6);
   const formik = useFormik({
     initialValues: { amount: "" },
     onSubmit: () => {
@@ -55,11 +55,10 @@ const TradeTypeBox = ({
   });
 
   const handleRadioChange = (value: string | number) => {
-    console.log({ value });
+    const newAmount = (+value * +_walletBalance) / 100;
 
-    const newAmount = (+value * walletBalance) / 100;
-    setAmount(newAmount.toFixed(2));
-    formik.setFieldValue("amount", newAmount.toFixed(2));
+    setAmount(newAmount.toFixed(6));
+    formik.setFieldValue("amount", newAmount.toFixed(6));
   };
 
   return (
@@ -85,12 +84,12 @@ const TradeTypeBox = ({
               {type.charAt(0).toUpperCase() + type.slice(1)} amount:
             </FormLabel>
             <Text color="gray.500" fontSize="sm">
-              Max: {walletBalance} {walletToken}
+              Max: {_walletBalance} {walletToken}
             </Text>
           </HStack>
           <Input
             type="number"
-            placeholder={`${walletBalance}.00`}
+            placeholder={`${_walletBalance}.00`}
             value={amount}
             onChange={(e) => {
               setAmount(e.target.value);
@@ -104,7 +103,12 @@ const TradeTypeBox = ({
         <CustomRadioGroup
           options={["25", "50", "75", "100"]}
           onChange={handleRadioChange}
-          value={amount ? (parseFloat(amount) / walletBalance) * 100 : ""}
+          prefix="%"
+          value={
+            amount
+              ? (parseFloat(amount) / parseFloat(_walletBalance)) * 100
+              : ""
+          }
         />
 
         <MotionButton
@@ -130,9 +134,13 @@ const TradeTypeBox = ({
 export const DepositOrWithdrawalBox = ({
   walletBalance,
   walletToken,
+  maxW = "auto",
+  ...props
 }: {
-  walletBalance: number;
+  walletBalance: string;
   walletToken: string;
+  maxW?: string;
+  width?: string | Record<string, any>;
 }) => {
   const [, setActiveTab] = useState(0);
   const bgColor = useColorModeValue("white", "gray.800");
@@ -162,14 +170,14 @@ export const DepositOrWithdrawalBox = ({
         <TabPanels>
           <TabPanel>
             <TradeTypeBox
-              walletBalance={walletBalance}
+              walletBalance={walletBalance || ""}
               walletToken={walletToken}
               type="deposit"
             />
           </TabPanel>
           <TabPanel>
             <TradeTypeBox
-              walletBalance={walletBalance}
+              walletBalance={walletBalance || ""}
               walletToken={walletToken}
               type="withdrawal"
             />

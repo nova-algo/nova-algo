@@ -1,13 +1,15 @@
-import { Button, HStack, useColorModeValue } from "@chakra-ui/react";
+import { Button, HStack, Text, useColorModeValue } from "@chakra-ui/react";
 
 export const CustomRadioGroup = ({
   options,
   onChange,
   value,
+  prefix = "",
 }: {
   options: string[];
   onChange: (val: string) => void;
   value: string | number;
+  prefix?: string;
 }) => {
   const bgColor = useColorModeValue("white", "gray.800");
   const activeColor = useColorModeValue("blue.500", "blue.300");
@@ -29,9 +31,10 @@ export const CustomRadioGroup = ({
           color={val === option ? "white" : "gray.600"}
           _hover={{ bg: val === option ? activeColor : "gray.100" }}
           borderRadius="0"
-          flex={1}
+          flexGrow={1}
+          flexShrink={0}
         >
-          {option === "100" ? "MAX" : `${option}%`}
+          <Text>{option === "100" ? "MAX" : `${option}${prefix}`}</Text>
         </Button>
       ))}
     </HStack>

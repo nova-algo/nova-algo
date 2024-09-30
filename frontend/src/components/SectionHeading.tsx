@@ -1,45 +1,57 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
+import { Box, Heading, useColorModeValue } from "@chakra-ui/react";
+import { motion } from "framer-motion";
 
-import { HStack, Text } from "@chakra-ui/react";
-
-export default function SectionHeading({
-  title,
-  containerStyleProps,
-  textStyleProps,
-  hideBorder,
-}: {
+interface SectionHeadingProps {
   title: string;
   hideBorder?: boolean;
-  containerStyleProps?: Record<string, any>;
-  textStyleProps?: Record<string, any>;
-}) {
+  containerProps?: React.ComponentProps<typeof Box>;
+  headingProps?: React.ComponentProps<typeof Heading>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MotionBox = motion.create(Box as any);
+
+const SectionHeading: React.FC<SectionHeadingProps> = ({
+  title,
+  hideBorder = false,
+  containerProps,
+  headingProps,
+}) => {
+  const borderColor = useColorModeValue("blue.500", "blue.300");
+  const textColor = useColorModeValue("gray.800", "white");
+
   return (
-    <HStack
-      my={5}
-      pos={"relative"}
-      pb={2}
-      {...(!hideBorder && {
-        _before: {
-          content: `''`,
-          w: "50px",
-          h: "3px",
-          rounded: "full",
-          bg: "orange.500",
-          pos: "absolute",
-          bottom: "0",
-          left: 0,
-        },
-      })}
-      {...containerStyleProps}
+    <MotionBox
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      position="relative"
+      mb={6}
+      {...containerProps}
     >
-      <Text
-        as={"span"}
-        fontSize={{ base: "18px", md: "22px" }}
-        fontWeight={"bold"}
-        {...textStyleProps}
+      <Heading
+        as="h2"
+        fontSize={{ base: "xl", md: "2xl" }}
+        fontWeight="bold"
+        color={textColor}
+        {...headingProps}
       >
         {title}
-      </Text>
-    </HStack>
+      </Heading>
+      {!hideBorder && (
+        <Box
+          position="absolute"
+          bottom="-2px"
+          left="0"
+          width="50px"
+          height="3px"
+          borderRadius="full"
+          bgGradient={`linear(to-r, ${borderColor}, ${borderColor})`}
+        />
+      )}
+    </MotionBox>
   );
-}
+};
+
+export default SectionHeading;
