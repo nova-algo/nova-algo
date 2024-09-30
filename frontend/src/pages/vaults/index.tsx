@@ -115,7 +115,6 @@ const VaultCard: React.FC<{ vault: Vault }> = ({ vault }) => {
             color="white"
             _hover={{
               bgGradient: "linear(to-r, #4A90E2, #9B59B6)",
-              opacity: 0.9,
             }}
           >
             Explore Vault

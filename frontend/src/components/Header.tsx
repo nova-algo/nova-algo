@@ -20,10 +20,10 @@ import {
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
-import { signIn, useSession, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
-import { ResponsivePopoverSheet } from "./SheetOrPopover";
+import { ResponsiveModalSheet } from "./SheetOrPopover";
 import { FaGoogle } from "react-icons/fa";
 import { LuMenu } from "react-icons/lu";
 
@@ -31,18 +31,24 @@ import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
 import { useDisconnect } from "@web3modal/solana/react";
 import Navbar from "./Navbar";
-import { useAppContext } from "@/context/app-context";
+// import { useAppContext } from "@/context/app-context";
+import { Link } from "@chakra-ui/next-js";
+import * as reown from "@reown/appkit";
+import { useGoogleLogin } from "@/hooks";
 
 export default function Header() {
-  const { address } = useAppContext();
-
+  // const { address } = useAppContext();
+  const { isLoading, handleLogin } = useGoogleLogin();
+  const [address, setAddress] = useState("");
+  useEffect(() => {
+    setAddress(reown.AccountController.state.address!);
+  }, []);
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
   });
   const { disconnect } = useDisconnect();
   const bgColor = useColorModeValue("#1b1b1b", "gray.900");
-  const [isLoading, setIsLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isNavbarOpen,
@@ -54,22 +60,12 @@ export default function Header() {
   const idToken = useMemo(
     () =>
       session
-        ? //@ts-expect-error id_token not in sesson types
+        ? //@ts-expect-error id_token not in session types
           session?.id_token
         : null,
     [session]
   );
 
-  async function showLogin() {
-    try {
-      setIsLoading(true);
-      await signIn("google");
-
-      setIsLoading(false);
-    } catch (error) {
-      setIsLoading(false);
-    }
-  }
   const authenticateCB = useCallback(
     (idToken: string, cb: (result: any, error: any) => void) =>
       authenticate(idToken, cb),
@@ -160,7 +156,7 @@ export default function Header() {
           py={2}
           justify={"space-between"}
         >
-          <Box>
+          <Box as={Link} href={"/"} textDecoration={"none"}>
             <Image
               src={logo}
               alt="Nova Algo logo"
@@ -192,43 +188,43 @@ export default function Header() {
                   </DarkMode>
                 </HStack>
               )}
-              {!(session || address) && (
-                <ResponsivePopoverSheet
-                  title=""
-                  isOpen={isOpen}
-                  onClose={onClose}
-                  onOpen={onOpen}
-                  trigger={
-                    <Button
-                      onClick={() => onOpen()}
-                      size={{ base: "sm", md: "md" }}
-                      isLoading={isLoading}
-                    >
-                      Try Nova Algo Free
-                    </Button>
-                  }
-                  content={
-                    <>
-                      <VStack>
-                        <w3m-button />
+              {!session && !address && (
+                <>
+                  {" "}
+                  <Button
+                    onClick={() => onOpen()}
+                    size={{ base: "sm", md: "md" }}
+                    isLoading={isLoading}
+                  >
+                    Try Nova Algo Free
+                  </Button>
+                  <ResponsiveModalSheet
+                    title=""
+                    isOpen={isOpen}
+                    onClose={onClose}
+                    content={
+                      <>
+                        <VStack>
+                          <w3m-button />
 
-                        <Box position="relative" padding="4">
-                          <Divider />
-                          <AbsoluteCenter bg="white" px="4">
-                            or
-                          </AbsoluteCenter>
-                        </Box>
-                        <Button
-                          variant={"outline"}
-                          leftIcon={<FaGoogle />}
-                          onClick={() => showLogin()}
-                        >
-                          Continue with Google
-                        </Button>
-                      </VStack>
-                    </>
-                  }
-                />
+                          <Box position="relative" padding="4">
+                            <Divider />
+                            <AbsoluteCenter bg="white" px="4">
+                              or
+                            </AbsoluteCenter>
+                          </Box>
+                          <Button
+                            variant={"outline"}
+                            leftIcon={<FaGoogle />}
+                            onClick={() => handleLogin()}
+                          >
+                            Continue with Google
+                          </Button>
+                        </VStack>
+                      </>
+                    }
+                  />
+                </>
               )}
               <Box hideFrom={"md"}>
                 <IconButton

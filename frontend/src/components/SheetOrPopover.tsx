@@ -1,46 +1,42 @@
-import React, { useState, useEffect, ReactNode } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  PopoverArrow,
-  PopoverCloseButton,
+  Modal,
+  ModalContent,
+  ModalBody,
+  ModalCloseButton,
   useBreakpointValue,
   VStack,
   Heading,
   Portal,
   IconButton,
   HStack,
+  ModalHeader,
+  ModalOverlay,
 } from "@chakra-ui/react";
 import { LuXCircle } from "react-icons/lu";
 
-interface ResponsivePopoverSheetProps {
+interface ResponsiveModalSheetProps {
   title?: string;
   content: React.ReactNode;
   isOpen: boolean;
   onClose: () => void;
-  onOpen: () => void;
-  trigger: ReactNode;
 }
 
-export const ResponsivePopoverSheet: React.FC<ResponsivePopoverSheetProps> = ({
+export const ResponsiveModalSheet: React.FC<ResponsiveModalSheetProps> = ({
   isOpen,
   onClose,
-  onOpen,
+
   title,
   content,
-
-  trigger,
 }) => {
-  const [isPopover, setIsPopover] = useState(true);
+  const [isModal, setIsModal] = useState(true);
 
-  // Use useBreakpointValue to determine if we should show a popover or sheet
-  const variant = useBreakpointValue({ base: "sheet", md: "popover" });
+  // Use useBreakpointValue to determine if we should show a Modal or sheet
+  const variant = useBreakpointValue({ base: "sheet", md: "Modal" });
 
   useEffect(() => {
-    setIsPopover(variant === "popover");
+    setIsModal(variant === "Modal");
   }, [variant]);
 
   const renderContent = () => (
@@ -52,25 +48,22 @@ export const ResponsivePopoverSheet: React.FC<ResponsivePopoverSheetProps> = ({
 
   return (
     <>
-      <Popover
-        isOpen={isOpen && isPopover}
+      <Modal
+        isOpen={isOpen && isModal}
         onClose={onClose}
-        onOpen={onOpen}
-        closeOnBlur={true}
-        placement="bottom"
+        closeOnOverlayClick={true}
         returnFocusOnClose={false}
       >
-        <PopoverTrigger>
-          <Box>{trigger}</Box>
-        </PopoverTrigger>
+        <ModalOverlay />
+        <ModalContent borderRadius="36px" boxShadow="lg">
+          <ModalHeader>
+            <ModalCloseButton />
+          </ModalHeader>
 
-        <PopoverContent borderRadius="36px" boxShadow="lg">
-          <PopoverArrow />
-          <PopoverCloseButton />
-          <PopoverBody>{renderContent()}</PopoverBody>
-        </PopoverContent>
-      </Popover>
-      {!isPopover && isOpen && (
+          <ModalBody>{renderContent()}</ModalBody>
+        </ModalContent>
+      </Modal>
+      {!isModal && isOpen && (
         <Portal>
           <Box
             h="100vh"
