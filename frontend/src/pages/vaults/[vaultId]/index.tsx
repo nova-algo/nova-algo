@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Box,
   Flex,
   HStack,
   Heading,
-  Image,
   Stack,
   Tab,
   TabList,
@@ -27,7 +26,6 @@ import SectionHeading from "@/components/SectionHeading";
 import VaultChart from "@/components/VaultChart";
 
 import { vaults } from "@/lib/vaults";
-import { useAppContext } from "@/context/app-context";
 import Header from "@/components/Header";
 
 const MotionBox = motion.create(Box as any);
@@ -36,13 +34,9 @@ const MotionFlex = motion.create(Flex as any);
 export default function VaultPage({
   vault,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const { balance, balanceSymbol } = useAppContext();
   // const bgColor = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue("gray.800", "white");
   const borderColor = useColorModeValue("gray.200", "gray.600");
-
-  const walletBalance = balance;
-  const walletToken = balanceSymbol;
 
   const tabBtnStyle = {
     fontSize: { xl: "24px", base: "16px", md: "20px" },
@@ -176,6 +170,7 @@ export default function VaultPage({
           wrap={{ lg: "nowrap", base: "wrap" }}
           justify="space-between"
           maxW="1350px"
+          pb={10}
           px={{ lg: 6, md: 5, base: 2 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -188,9 +183,10 @@ export default function VaultPage({
             colorScheme="blue"
             variant="solid-rounded"
             px={{ base: 2, lg: 3 }}
+            w={{ lg: "fit-content", base: "100%" }}
           >
             <TabList
-              maxW="fit-content"
+              // maxW="fit-content"
               flexWrap={{ base: "wrap", sm: "nowrap" }}
               justifyContent={{ base: "center" }}
               gap={{ lg: 8, base: 4, sm: 6 }}
@@ -281,10 +277,16 @@ export default function VaultPage({
             </TabPanels>
           </Tabs>
 
-          <Box mx={"auto"} px={0} minW={{ md: 400, base: 250 }}>
+          <Box
+            mx={"auto"}
+            px={0}
+            minW={{ md: 400, base: 250 }}
+            w={{ base: "full", lg: "auto" }}
+            maxW={{ base: "600", lg: 400 }}
+          >
             <DepositOrWithdrawalBox
-              walletToken={walletToken}
-              walletBalance={walletBalance}
+              // walletToken={walletToken}
+              // walletBalance={walletBalance}
               width="full"
               maxW="auto"
             />

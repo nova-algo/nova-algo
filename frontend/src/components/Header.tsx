@@ -21,12 +21,11 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { signIn, useSession, signOut } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
 import { ResponsivePopoverSheet } from "./SheetOrPopover";
 import { FaGoogle } from "react-icons/fa";
 import { LuMenu } from "react-icons/lu";
-import * as reown from "@reown/appkit";
 
 import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
@@ -35,7 +34,7 @@ import Navbar from "./Navbar";
 import { useAppContext } from "@/context/app-context";
 
 export default function Header() {
-  const { address, balance } = useAppContext();
+  const { address } = useAppContext();
 
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
@@ -51,30 +50,7 @@ export default function Header() {
     onClose: onNavbarClose,
   } = useDisclosure();
   const { data: session } = useSession();
-  const {
-    isLoggedIn,
-    authenticate,
-    authenticateWithUserId,
-    logOut,
-    getPortfolio,
-    transferTokens,
-    getWallets,
-    createWallet,
-    getSupportedNetworks,
-    getSupportedTokens,
-    getUserDetails,
-    orderHistory,
-    getNftOrderDetails,
-    showWidgetModal,
-    getRawTransactionStatus,
-    transferTokensWithJobStatus,
-    transferNft,
-    transferNftWithJobStatus,
-    executeRawTransaction,
-    executeRawTransactionWithJobStatus,
-    setTheme,
-    getTheme,
-  } = useOkto() as OktoContextType;
+  const { isLoggedIn, authenticate, logOut } = useOkto() as OktoContextType;
   const idToken = useMemo(
     () =>
       session
@@ -83,23 +59,6 @@ export default function Header() {
         : null,
     [session]
   );
-
-  async function handleAuthenticate(): Promise<any> {
-    console.log({ idToken }, "start authenticate");
-    if (!idToken) {
-      return { result: false, error: "No google login" };
-    }
-
-    return new Promise((resolve) => {
-      authenticate(idToken, (result: any, error: any) => {
-        if (result) {
-          resolve({ result: true });
-        } else if (error) {
-          resolve({ result: false, error });
-        }
-      });
-    });
-  }
 
   async function showLogin() {
     try {
@@ -111,52 +70,73 @@ export default function Header() {
       setIsLoading(false);
     }
   }
+  const authenticateCB = useCallback(
+    (idToken: string, cb: (result: any, error: any) => void) =>
+      authenticate(idToken, cb),
+    [authenticate]
+  );
   useEffect(() => {
+    async function handleAuthenticate(): Promise<any> {
+      console.log({ idToken }, "start authenticate");
+      if (!idToken) {
+        return { result: false, error: "No google login" };
+      }
+
+      return new Promise((resolve) => {
+        authenticateCB(idToken, (result: any, error: any) => {
+          if (result) {
+            resolve({ result: true });
+          } else if (error) {
+            resolve({ result: false, error });
+          }
+        });
+      });
+    }
     if (session) {
       handleAuthenticate();
       // createWallet();
       // getUserDetails();
     }
-  }, [session]);
+  }, [authenticateCB, idToken, session]);
 
-  async function fetchWallets() {
-    try {
-      const supportedNetworks = await createWallet();
+  // async function fetchWallets() {
+  //   try {
+  //     const supportedNetworks = await createWallet();
 
-      // await getSupportedNetworks();
-      console.log("Supported networks:", supportedNetworks);
-    } catch (error) {
-      console.error("Error fetching supported networks:", error);
-    }
+  //     // await getSupportedNetworks();
+  //     console.log("Supported networks:", supportedNetworks);
+  //   } catch (error) {
+  //     console.error("Error fetching supported networks:", error);
+  //   }
 
-    try {
-      const supportedTokens = await getSupportedTokens();
-      console.log("Supported tokens:", supportedTokens);
-    } catch (error) {
-      console.error("Error fetching supported tokens:", error);
-    }
+  //   try {
+  //     const supportedTokens = await getSupportedTokens();
+  //     console.log("Supported tokens:", supportedTokens);
+  //   } catch (error) {
+  //     console.error("Error fetching supported tokens:", error);
+  //   }
 
-    try {
-      const wallets = await getWallets();
-      console.log("Wallets:", wallets);
-    } catch (error) {
-      console.error("Error fetching wallets:", error);
-    }
+  //   try {
+  //     const wallets = await getWallets();
+  //     console.log("Wallets:", wallets);
+  //   } catch (error) {
+  //     console.error("Error fetching wallets:", error);
+  //   }
 
-    try {
-      const userDetails = await getUserDetails();
-      console.log("User details:", userDetails);
-    } catch (error) {
-      console.error("Error fetching user details:", error);
-    }
+  //   try {
+  //     const userDetails = await getUserDetails();
+  //     console.log("User details:", userDetails);
+  //   } catch (error) {
+  //     console.error("Error fetching user details:", error);
+  //   }
 
-    try {
-      const portfolio = await getPortfolio();
-      console.log("Portfolio:", portfolio);
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-    }
-  }
+  //   try {
+  //     const portfolio = await getPortfolio();
+  //     console.log("Portfolio:", portfolio);
+  //   } catch (error) {
+  //     console.error("Error fetching portfolio:", error);
+  //   }
+  // }
   async function handleLogout() {
     disconnect();
     session && (await signOut());

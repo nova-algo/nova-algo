@@ -14,7 +14,7 @@ export default function DataList({ data = {} }: { data: Record<string, any> }) {
         >
           <Text
             as={"span"}
-            color={"gray.400"}
+            color={"gray.500"}
             fontSize={{ base: "17px", md: "18px" }}
             textAlign={"left"}
           >

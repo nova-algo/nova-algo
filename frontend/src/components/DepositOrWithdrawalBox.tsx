@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -20,6 +20,8 @@ import {
 import { useFormik } from "formik";
 import { motion } from "framer-motion";
 import { CustomRadioGroup } from "./CustomRadioGroup";
+// import { useAppContext } from "@/context/app-context";
+import * as reown from "@reown/appkit";
 
 const MotionBox = motion(Box as any);
 const MotionButton = motion(Button as any);
@@ -38,7 +40,7 @@ const TradeTypeBox = ({
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const textColor = useColorModeValue("gray.800", "white");
-  const _walletBalance = (+walletBalance).toFixed(6);
+  const _walletBalance = (+walletBalance).toFixed(3);
   const formik = useFormik({
     initialValues: { amount: "" },
     onSubmit: () => {
@@ -57,8 +59,8 @@ const TradeTypeBox = ({
   const handleRadioChange = (value: string | number) => {
     const newAmount = (+value * +_walletBalance) / 100;
 
-    setAmount(newAmount.toFixed(6));
-    formik.setFieldValue("amount", newAmount.toFixed(6));
+    setAmount(newAmount.toFixed(3));
+    formik.setFieldValue("amount", newAmount.toFixed(3));
   };
 
   return (
@@ -130,18 +132,17 @@ const TradeTypeBox = ({
     </MotionBox>
   );
 };
-
-export const DepositOrWithdrawalBox = ({
-  walletBalance,
-  walletToken,
-  maxW = "auto",
-  ...props
-}: {
-  walletBalance: string;
-  walletToken: string;
+export const DepositOrWithdrawalBox = ({}: {
   maxW?: string;
   width?: string | Record<string, any>;
 }) => {
+  const [balance, setBalance] = useState("");
+  const [balanceSymbol, setBalanceSymbol] = useState("SOL");
+  useEffect(() => {
+    setBalance(reown.AccountController.state.balance!);
+    setBalanceSymbol(reown.AccountController.state.balanceSymbol!);
+  }, []);
+
   const [, setActiveTab] = useState(0);
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
@@ -156,6 +157,7 @@ export const DepositOrWithdrawalBox = ({
       overflow="hidden"
       boxShadow="xl"
       border="1px"
+      w="full"
       borderColor={borderColor}
     >
       <Tabs onChange={setActiveTab} isFitted variant="enclosed">
@@ -170,15 +172,15 @@ export const DepositOrWithdrawalBox = ({
         <TabPanels>
           <TabPanel>
             <TradeTypeBox
-              walletBalance={walletBalance || ""}
-              walletToken={walletToken}
+              walletBalance={balance || ""}
+              walletToken={balanceSymbol}
               type="deposit"
             />
           </TabPanel>
           <TabPanel>
             <TradeTypeBox
-              walletBalance={walletBalance || ""}
-              walletToken={walletToken}
+              walletBalance={balance || ""}
+              walletToken={balanceSymbol}
               type="withdrawal"
             />
           </TabPanel>

@@ -109,7 +109,7 @@ const VaultChart: React.FC = () => {
       px={{ base: 2, md: 4, lg: 6 }}
       boxShadow="lg"
     >
-      <HStack justifyContent="space-between" mb={4} wrap={"wrap"}>
+      <HStack justifyContent="space-between" mb={4} wrap={"wrap"} spacing={5}>
         <Text fontSize="2xl" fontWeight="bold" color={textColor}>
           Vault Performance
         </Text>

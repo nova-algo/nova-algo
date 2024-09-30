@@ -16,7 +16,7 @@ import { LuArrowRight } from "react-icons/lu";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MotionBox = motion.create(Box as any);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const MotionButton = motion.create(Button as any, { forwardMotionProps: true });
+// const MotionButton = motion.create(Button as any);
 const Hero = () => {
   const textColor = useColorModeValue("gray.800", "gray.100");
 
@@ -79,29 +79,30 @@ const Hero = () => {
               // align={"center"}
               justify={"center"}
             >
-              <MotionButton
-                href="/sign-up"
-                size={"lg"}
-                as={Link}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                colorScheme="blue"
-                pl={8}
-                pr={3}
-                gap={2}
-              >
-                Automate My Trading{" "}
-                <Box
-                  as={motion.div}
-                  whileHover={{ translateX: 10 }}
-                  rounded={"full"}
-                  bg={"white"}
-                  color={"blue.500"}
-                  p={2}
+              <Link href="/sign-up">
+                <Button
+                  as={motion.button}
+                  size={"lg"}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  colorScheme="blue"
+                  pl={8}
+                  pr={3}
+                  gap={2}
                 >
-                  <LuArrowRight />
-                </Box>
-              </MotionButton>
+                  Automate My Trading{" "}
+                  <Box
+                    as={motion.div}
+                    whileHover={{ translateX: 10 }}
+                    rounded={"full"}
+                    bg={"white"}
+                    color={"blue.500"}
+                    p={2}
+                  >
+                    <LuArrowRight />
+                  </Box>
+                </Button>
+              </Link>
               <Button size={"lg"} colorScheme="blue" variant="outline" px={8}>
                 See How it works
               </Button>

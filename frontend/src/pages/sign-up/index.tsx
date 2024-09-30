@@ -14,7 +14,8 @@ import {
 import { FaGoogle, FaWallet } from "react-icons/fa";
 import { motion } from "framer-motion";
 
-const MotionBox = motion.create(Box);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MotionBox = motion.create(Box as any);
 
 const SignUpPage: React.FC = () => {
   const bgColor = useColorModeValue("gray.50", "gray.900");
