@@ -5,12 +5,10 @@ import {
   Container,
   useColorModeValue,
   SimpleGrid,
-  Icon,
   Flex,
+  Image,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { IconType } from "react-icons";
-import { FaRobot, FaChartLine, FaShieldAlt, FaClock } from "react-icons/fa";
 import Benefits from "./Benefits";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +17,7 @@ const MotionBox = motion.create(Box as any);
 const MotionFlex = motion.create(Flex as any);
 
 interface FeatureCardProps {
-  icon: IconType;
+  icon: string;
   title: string;
   description: string;
 }
@@ -43,7 +41,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
       whileHover={{ y: -5, boxShadow: "xl" }}
       transition={{ duration: 0.3 }}
     >
-      <Icon as={icon} w={10} h={10} color="blue.500" mb={4} />
+      <Image alt="icon" src={icon} w={12} h={12} color="blue.500" mb={1} />
       <Heading as="h3" size="md" mb={2}>
         {title}
       </Heading>
@@ -73,22 +71,22 @@ const Featured = () => {
         </MotionFlex>
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={10}>
           <FeatureCard
-            icon={FaRobot}
+            icon={"/icons/vault-lock.svg"}
             title="Advanced automated Vaults"
             description="Our advanced automated vaults manages your portfolio, executing trades with precision and adaptability."
           />
           <FeatureCard
-            icon={FaChartLine}
+            icon={"/icons/Analytics.svg"}
             title="Real-Time Analytics"
             description="Stay informed with up-to-the-minute performance metrics and insights on your automated vault."
           />
           <FeatureCard
-            icon={FaShieldAlt}
+            icon={"/icons/security-shield.svg"}
             title="Bank-Grade Security"
             description="Your investments are protected by state-of-the-art security measures within our vaults."
           />
           <FeatureCard
-            icon={FaClock}
+            icon={"/icons/247-shield.svg"}
             title="24/7 Automation"
             description="Our automated vaults optimizes your portfolio around the clock, even while you sleep."
           />

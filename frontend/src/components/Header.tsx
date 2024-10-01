@@ -23,7 +23,7 @@ import {
 import { useSession, signOut } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
-import { ResponsiveModalSheet } from "./SheetOrPopover";
+import { ResponsiveModalSheet } from "./SheetOrModal";
 import { FaGoogle } from "react-icons/fa";
 import { LuMenu } from "react-icons/lu";
 

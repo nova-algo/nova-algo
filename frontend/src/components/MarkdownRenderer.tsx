@@ -36,11 +36,11 @@ const MarkdownRenderer = ({ markdown }: { markdown: string }) => {
   return (
     <ReactMarkdown
       // eslint-disable-next-line react/no-children-prop
-      children={markdown}
+
       remarkPlugins={[remarkGfm]}
       components={{
         a: ({ node, ...props }) => (
-          <Link {...props} color={"gs-yellow.400"} isExternal />
+          <Link {...props} color={"blue.500"} isExternal />
         ),
         p: ({ node, ...props }) => <Text {...props} my={2} />,
         b: ({ node, ...props }) => (
@@ -153,7 +153,9 @@ const MarkdownRenderer = ({ markdown }: { markdown: string }) => {
           />
         ),
       }}
-    />
+    >
+      {markdown}
+    </ReactMarkdown>
   );
 };
 

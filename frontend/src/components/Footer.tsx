@@ -8,7 +8,7 @@ import {
   useColorModeValue,
   SimpleGrid,
 } from "@chakra-ui/react";
-
+import { Link } from "@chakra-ui/next-js";
 export default function Footer() {
   const textColor = useColorModeValue("gray.800", "gray.100");
 
@@ -26,40 +26,30 @@ export default function Footer() {
             <Heading size="md" mb={2}>
               Quick Links
             </Heading>
-            <Text as="a" href="#">
-              About Us
-            </Text>
-            <Text as="a" href="#">
-              How It Works
-            </Text>
-            <Text as="a" href="#">
-              FAQ
-            </Text>
+            <Link href="#">About Us</Link>
+            <Link href="/how-it-works">How It Works</Link>
+            <Link href="/faqs">FAQ</Link>
           </VStack>
           <VStack align="start">
             <Heading size="md" mb={2}>
               Legal
             </Heading>
-            <Text as="a" href="#">
-              Terms of Service
-            </Text>
-            <Text as="a" href="#">
-              Privacy Policy
-            </Text>
+            <Link href="#">Terms of Service</Link>
+            <Link href="#">Privacy Policy</Link>
           </VStack>
           <VStack align="start">
             <Heading size="md" mb={2}>
               Connect
             </Heading>
-            <Text as="a" href="#">
+            <Link href="https://x.com/novaalgo" isExternal>
               Twitter
-            </Text>
-            <Text as="a" href="#">
+            </Link>
+            <Link href="#" isExternal>
               LinkedIn
-            </Text>
-            <Text as="a" href="#">
+            </Link>
+            <Link href="mailto:support@novaalgo.com" isExternal>
               Support
-            </Text>
+            </Link>
           </VStack>
         </SimpleGrid>
         <Text mt={10} textAlign="center">

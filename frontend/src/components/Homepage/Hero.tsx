@@ -15,7 +15,7 @@ import {
 import { motion } from "framer-motion";
 import { FaGoogle } from "react-icons/fa";
 import { LuArrowRight } from "react-icons/lu";
-import { ResponsiveModalSheet } from "../SheetOrPopover";
+import { ResponsiveModalSheet } from "../SheetOrModal";
 import { useGoogleLogin } from "@/hooks";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

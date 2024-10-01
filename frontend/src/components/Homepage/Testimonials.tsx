@@ -18,12 +18,14 @@ interface TestimonialCardProps {
   content: string;
   author: string;
   position: string;
+  avatar: string;
 }
 
 const TestimonialCard: React.FC<TestimonialCardProps> = ({
   content,
   author,
   position,
+  avatar,
 }) => {
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -44,7 +46,13 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         {content}
       </Text>
       <Flex align="center">
-        <Avatar size="sm" mr={2} />
+        <Avatar
+          size="sm"
+          mr={2}
+          src={avatar}
+          name={author}
+          objectPosition={"top"}
+        />
         <Box>
           <Text fontWeight="bold">{author}</Text>
           <Text fontSize="sm" color="gray.500">
@@ -63,19 +71,22 @@ export default function Testimonials() {
       </Heading>
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10}>
         <TestimonialCard
-          content="Nova Algo's AI-powered vaults have completely transformed my trading strategy. The results speak for themselves!"
+          content="Nova Algo's automated vaults have completely transformed my trading strategy. The results speak for themselves!"
           author="Alex Chen"
           position="Crypto Enthusiast"
+          avatar="/images/alex.jpg"
         />
         <TestimonialCard
-          content="I've tried many trading bots, but Nova Algo's automated vaults are in a league of their own. The AI adaptation is impressive."
+          content="I've tried many trading bots, but Nova Algo's automated vaults are in a league of their own. The advanced automation is impressive."
           author="Sarah Johnson"
           position="Day Trader"
+          avatar="/images/sarah.jpg"
         />
         <TestimonialCard
           content="As a busy professional, Nova Algo gives me peace of mind. My portfolio is optimized 24/7 without any effort on my part."
           author="Michael Lee"
           position="Tech Executive"
+          avatar="/images/lee.jpg"
         />
       </SimpleGrid>
     </Container>

@@ -70,8 +70,12 @@ export const ResponsiveModalSheet: React.FC<ResponsiveModalSheetProps> = ({
             w="100vw"
             position="fixed"
             top={0}
+            id="overlay"
             left={0}
             bg={"blackAlpha.500"}
+            onClick={(e) => {
+              (e.target as HTMLDivElement).id === "overlay" ? onClose() : null;
+            }}
           >
             <Box
               p={4}

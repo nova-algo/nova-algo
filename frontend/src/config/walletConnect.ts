@@ -27,6 +27,10 @@ export const createWalletConnectModal = () => {
     adapters: [solanaWeb3JsAdapter],
     networks: [solana, solanaTestnet, solanaDevnet],
     metadata: metadata,
+    themeMode: "light",
+    themeVariables: {
+      "--w3m-z-index": 3000,
+    },
     projectId,
     features: {
       email: false,

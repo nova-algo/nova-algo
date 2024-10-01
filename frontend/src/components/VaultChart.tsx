@@ -85,7 +85,7 @@ const VaultChart: React.FC = () => {
   });
   const bgColor = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue("gray.800", "white");
-  const chartColor = useColorModeValue("blue.500", "blue.300");
+  const chartColor = useColorModeValue("#054695", "#084c9e");
   const [radioValue, setSelectedRadioValue] = useState("P&L");
   const data = useMemo(() => {
     const days = timeRange.value === "all" ? 365 : parseInt(timeRange.value);
@@ -161,12 +161,21 @@ const VaultChart: React.FC = () => {
               strokeDasharray="3 3"
               stroke={useColorModeValue("gray.200", "gray.600")}
             />
+
             <XAxis
               dataKey="date"
               stroke={textColor}
               tick={{ fill: textColor }}
+              axisLine={false}
+              tickLine={false}
             />
-            <YAxis stroke={textColor} tick={{ fill: textColor }} />
+            <YAxis
+              stroke={textColor}
+              tick={{ fill: textColor }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(value) => `$${value.toFixed(0)}`}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"

@@ -1,4 +1,4 @@
-import { vaults } from "@/lib/vaults";
+import vaults from "@/lib/vaults.json";
 
 import { mainHandler } from "@/utils";
 

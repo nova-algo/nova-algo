@@ -14,8 +14,11 @@ import {
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { Link } from "@chakra-ui/next-js";
-import { Vault, vaults } from "@/lib/vaults";
+import vaults from "@/lib/vaults.json";
 import Header from "@/components/Header";
+import { Vault } from "@/types";
+import Head from "next/head";
+import Footer from "@/components/Footer";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MotionBox = motion.create(Box as any);
@@ -23,10 +26,13 @@ const MotionBox = motion.create(Box as any);
 const MotionButton = motion.create(Button as any);
 
 const VaultsPage: React.FC = () => {
-  const bgColor = useColorModeValue("gray.100", "gray.900");
+  const bgColor = useColorModeValue("gray.200", "gray.900");
 
   return (
     <>
+      <Head>
+        <title>Explore our advanced autmated vaults</title>
+      </Head>
       <Header />
       <Box bg={bgColor} minHeight="100vh" py={12} mt={12}>
         <Container maxW="container.xl">
@@ -46,6 +52,7 @@ const VaultsPage: React.FC = () => {
           </VStack>
         </Container>
       </Box>
+      <Footer />
     </>
   );
 };
