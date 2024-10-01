@@ -17,6 +17,7 @@ import { FaGoogle } from "react-icons/fa";
 import { LuArrowRight } from "react-icons/lu";
 import { ResponsiveModalSheet } from "../SheetOrModal";
 import { useGoogleLogin } from "@/hooks";
+import { Link } from "@chakra-ui/next-js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MotionBox = motion.create(Box as any);
@@ -77,7 +78,6 @@ const Hero = () => {
                 // align={"center"}
                 justify={"center"}
               >
-                {/* <Link href="/sign-up"> */}
                 <Button
                   as={motion.button}
                   size={"lg"}
@@ -105,15 +105,21 @@ const Hero = () => {
                     <LuArrowRight />
                   </Box>
                 </Button>
-                {/* </Link> */}
-                <Button size={"lg"} colorScheme="blue" variant="outline" px={8}>
-                  See How it works
-                </Button>
+                <Link href={"/how-it-works"} textDecor={"none"}>
+                  <Button
+                    size={"lg"}
+                    colorScheme="blue"
+                    variant="outline"
+                    px={8}
+                  >
+                    See How it works
+                  </Button>
+                </Link>
               </HStack>
             </MotionBox>
           </VStack>
         </Container>
-        <Box mt={{ md: 10 }} pos={"relative"}>
+        <Box mt={{ md: 20 }} pos={"relative"}>
           <Image
             display={"inline-block"}
             src="/images/wave.svg"

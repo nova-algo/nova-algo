@@ -43,7 +43,7 @@ export default function Benefits() {
         >
           <Box flex={1} pr={{ base: 0, lg: 12 }} mb={{ base: 12, lg: 0 }}>
             <Heading as="h2" size="2xl" mb={6}>
-              Unleash the Power of AI-Driven Trading Vaults
+              Unleash the Power of Automated Trading Vaults
             </Heading>
             <Text fontSize="xl" mb={8}>
               Nova Algo&apos;s automated vaults bring institutional-grade
