@@ -10,7 +10,7 @@ from io import StringIO
 from driftpy.types import OrderType, OrderParams, PositionDirection, MarketType # type: ignore
 from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
 from src.api.drift.api import DriftAPI
-from src.common.types import MarketMakerConfig, Bot
+from src.common.types import MarketMakerConfig, Bot, PositionType
 from typing import Optional
 
 # Configure logging
@@ -43,9 +43,11 @@ class MarketMaker(Bot):
         Initialize the market maker by setting up the market index and initial position.
         """
         # Initialize the position
-        position = await self.drift_api.get_position(self.market_index)
+        position: Optional[PositionType] = await self.drift_api.get_position(self.market_index, self.config.market_type)
         if position:
             self.position_size = Decimal(str(position.base_asset_amount)) / BASE_PRECISION
+        else:
+            self.position_size = Decimal('0')
         
         logger.info(f"Initialized market maker for {self.config.symbol} (Market Index: {self.market_index})")
         logger.info(f"Initial position size: {self.position_size}")
@@ -94,8 +96,8 @@ class MarketMaker(Bot):
                 await self.place_orders()
                 
                 # Update last trade price
-                market = self.drift_api.get_market(self.market_index)
-                self.last_trade_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+                market = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+                self.last_trade_price = Decimal(str(market.price)) / PRICE_PRECISION
                 
                 await asyncio.sleep(interval_ms / 1000)
             except Exception as e:

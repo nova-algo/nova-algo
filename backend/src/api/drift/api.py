@@ -14,6 +14,7 @@ Dependencies:
     - driftpy
 """
 
+from decimal import Decimal
 import os
 import json
 import logging
@@ -36,7 +37,8 @@ from driftpy.types import (
     SpotPosition,
     UserAccount,
     Order,
-    ModifyOrderParams
+    ModifyOrderParams, 
+    OraclePriceData
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
@@ -57,6 +59,7 @@ from driftpy.math.perp_position import (
     is_available
 )
 from driftpy.keypair import load_keypair
+from src.common.types import PositionType
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
@@ -268,7 +271,7 @@ class DriftAPI:
             logger.error(f"Error placing limit order: {str(e)}")
             return None
 
-    def get_position(self, market_index: int, market_type: MarketType) -> Optional[Union[PerpPosition, SpotPosition]]:
+    def get_position(self, market_index: int, market_type: MarketType) -> Optional[PositionType]:
         """
         Retrieves the position information for the specified market index.
         
@@ -653,14 +656,79 @@ class DriftAPI:
         except Exception as e:
             print(f"Error retrieving spot position for market index {market_index}: {str(e)}")
             return None
-        
 
-    # trading history “ check my branch in path, I did something there”.
-    # funding ( settlement and delivery)
+    
+    def get_market_price(self, market_index: int, market_type: MarketType) -> Optional[int]:
+        """
+        Get the current price of a market (perpetual or spot).
+
+        Args:
+            market_index (int): The index of the market.
+            market_type (MarketType): The type of the market (Perp or Spot).
+
+        Returns:
+            Optional[float]: The current price of the market, or None if the price data is unavailable
+                            or if there's an issue with the market type.
+        """
+        try:
+            if market_type == MarketType.Perp():
+                oracle_price_data = self.get_market_price_data(market_index, MarketType.Perp())
+            elif market_type == MarketType.Spot():
+                oracle_price_data = self.get_market_price_data(market_index, MarketType.Spot())
+            else:
+                print(f"Warning: Invalid market type: {market_type}")
+                return None
+            
+            if oracle_price_data is not None:
+                return oracle_price_data.price / PRICE_PRECISION
+            else:
+                return None
+        except Exception as e:
+            print(f"Error getting market price for index {market_index}, type {market_type}: {str(e)}")
+            return None
+
+    def get_market_price_data(self, market_index: int, market_type: MarketType) -> Optional[OraclePriceData]:
+        """
+        Get the full oracle price data for a market.
+
+        Args:
+            market_index (int): The index of the market.
+            market_type (MarketType): The type of the market (Perp or Spot).
+
+        Returns:
+            Optional[OraclePriceData]: The full oracle price data, or None if unavailable or if there's an error.
+        """
+        try:
+            if market_type == MarketType.Perp():
+                return self.drift_client.get_oracle_price_data_for_perp_market(market_index)
+            elif market_type == MarketType.Spot():
+                return self.drift_client.get_oracle_price_data_for_spot_market(market_index)
+            else:
+                logger.warning(f"Invalid market type: {market_type}")
+                return None
+        except Exception as e:
+            logger.error(f"Error getting market price data: {e}")
+            return None
 
 
 
-        # async def close_all_positions(self):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+    # async def close_all_positions(self):
     #     """
     #     Closes all open positions for the user across all markets.
 
