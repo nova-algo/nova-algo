@@ -20,11 +20,10 @@ import {
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
-import { useSession, signOut } from "next-auth/react";
-import { useEffect, useMemo } from "react";
+import { signOut } from "next-auth/react";
+import { useEffect } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
 import { ResponsiveModalSheet } from "./SheetOrModal";
-import { FaGoogle } from "react-icons/fa";
 import { LuMenu } from "react-icons/lu";
 
 import Gradient3DBackground from "./GradientBg";
@@ -32,14 +31,11 @@ import { shortenAddress } from "@/utils";
 import { useDisconnect } from "@web3modal/solana/react";
 import Navbar from "./Navbar";
 import { Link } from "@chakra-ui/next-js";
-
-import { useGoogleLogin } from "@/hooks";
-import { useAppContext } from "@/context/app-context";
+import { useAppContext, useNextAuthSession } from "@/context/app-context";
+import { GoogleLogin } from "./GoogleLogin";
 
 export default function Header() {
-  const { address } = useAppContext();
-  const { isLoading, handleLogin } = useGoogleLogin();
- 
+  const { address, idToken } = useAppContext();
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
@@ -52,25 +48,18 @@ export default function Header() {
     onOpen: onNavbarOpen,
     onClose: onNavbarClose,
   } = useDisclosure();
-  const { data: session } = useSession();
+  const { data: session } = useNextAuthSession();
   const {
     isLoggedIn,
     authenticate,
     logOut,
-    showWidgetModal,
-    // getPortfolio,
-    // getSupportedTokens,
-    // getWallets,
-    // getUserDetails,
+    // showWidgetModal,
+    createWallet,
+    getPortfolio,
+    getSupportedTokens,
+    getWallets,
+    getUserDetails,
   } = useOkto() as OktoContextType;
-  const idToken = useMemo(
-    () =>
-      session
-        ? //@ts-expect-error id_token not in session types
-          session?.id_token
-        : null,
-    [session]
-  );
 
   async function handleAuthenticate(): Promise<any> {
     console.log({ idToken }, "start authenticate");
@@ -89,52 +78,54 @@ export default function Header() {
     });
   }
   useEffect(() => {
-    if (session && !isLoggedIn) {
-      handleAuthenticate();
+    (async () => {
+      if (idToken && !isLoggedIn) {
+        await handleAuthenticate();
 
-      // fetchWallets();
-    }
+        // fetchWallets();
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, isLoggedIn]);
+  }, [idToken, isLoggedIn]);
 
-  // async function fetchWallets() {
-  //   try {
-  //     const supportedNetworks = await createWallet();
+  async function fetchWallets() {
+    try {
+      const supportedNetworks = await createWallet();
 
-  //     // await getSupportedNetworks();
-  //     console.log("Supported networks:", supportedNetworks);
-  //   } catch (error) {
-  //     console.error("Error fetching supported networks:", error);
-  //   }
+      // await getSupportedNetworks();
+      console.log("Supported networks:", supportedNetworks);
+    } catch (error) {
+      console.error("Error fetching supported networks:", error);
+    }
 
-  //   try {
-  //     const supportedTokens = await getSupportedTokens();
-  //     console.log("Supported tokens:", supportedTokens);
-  //   } catch (error) {
-  //     console.error("Error fetching supported tokens:", error);
-  //   }
+    try {
+      const supportedTokens = await getSupportedTokens();
+      console.log("Supported tokens:", supportedTokens);
+    } catch (error) {
+      console.error("Error fetching supported tokens:", error);
+    }
 
-  //   try {
-  //     const wallets = await getWallets();
-  //     console.log("Wallets:", wallets);
-  //   } catch (error) {
-  //     console.error("Error fetching wallets:", error);
-  //   }
+    try {
+      const wallets = await getWallets();
+      console.log("Wallets:", wallets);
+    } catch (error) {
+      console.error("Error fetching wallets:", error);
+    }
 
-  //   try {
-  //     const userDetails = await getUserDetails();
-  //     console.log("User details:", userDetails);
-  //   } catch (error) {
-  //     console.error("Error fetching user details:", error);
-  //   }
+    try {
+      const userDetails = await getUserDetails();
+      console.log("User details:", userDetails);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
 
-  //   try {
-  //     const portfolio = await getPortfolio();
-  //     console.log("Portfolio:", portfolio);
-  //   } catch (error) {
-  //     console.error("Error fetching portfolio:", error);
-  //   }
-  // }
+    try {
+      const portfolio = await getPortfolio();
+      console.log("Portfolio:", portfolio);
+    } catch (error) {
+      console.error("Error fetching portfolio:", error);
+    }
+  }
   async function handleLogout() {
     disconnect();
     session && (await signOut());
@@ -167,7 +158,9 @@ export default function Header() {
               maxW={"100px"}
             />
           </Box>
-          <Button onClick={async () => showWidgetModal()}>create wallet</Button>
+          <Button onClick={async () => await fetchWallets()}>
+            create wallet
+          </Button>
           <Box hideBelow={"md"}>
             <DarkMode>
               <Navbar />
@@ -197,7 +190,6 @@ export default function Header() {
                   <Button
                     onClick={() => onOpen()}
                     size={{ base: "sm", md: "md" }}
-                    isLoading={isLoading}
                   >
                     Try Nova Algo Free
                   </Button>
@@ -216,13 +208,7 @@ export default function Header() {
                               or
                             </AbsoluteCenter>
                           </Box>
-                          <Button
-                            variant={"outline"}
-                            leftIcon={<FaGoogle />}
-                            onClick={() => handleLogin()}
-                          >
-                            Continue with Google
-                          </Button>
+                          <GoogleLogin />
                         </VStack>
                       </>
                     }

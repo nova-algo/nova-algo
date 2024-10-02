@@ -4,11 +4,14 @@ import { OktoProvider, BuildType } from "okto-sdk-react";
 import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { USER_ACCOUNT_TYPE } from "@/types";
+import { NextAuthSession, USER_ACCOUNT_TYPE } from "@/types";
+import { useSession } from "next-auth/react";
 
 export const AppContext = createContext<{
   apiKey: string;
   buildType: BuildType;
+  idToken: string;
+  setIdToken: (token: string) => void;
   address: string;
   setAddress: (address: string) => void;
   balance: string;
@@ -20,6 +23,8 @@ export const AppContext = createContext<{
 }>({
   apiKey: "",
   buildType: BuildType.SANDBOX,
+  idToken: "",
+  setIdToken: () => {},
   balanceSymbol: "",
   setBalanceSymbol: () => {},
   address: "",
@@ -33,8 +38,9 @@ export const AppContext = createContext<{
 const oktoApiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY!;
 export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const reownAccount = useAppKitAccount();
+  const { data: session } = useNextAuthSession();
   const { connection: reownConnection } = useAppKitConnection();
-
+  const [idToken, setIdToken] = useState("");
   const [apiKey] = useState(oktoApiKey);
   const [buildType] = useState(BuildType.SANDBOX);
   const [address, setAddress] = useState("");
@@ -56,10 +62,19 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reownAccount]);
+  useEffect(() => {
+    if (session) {
+      setAccountType("GOOGLE");
+      setIdToken(session?.id_token as string);
+    }
+  }, [session]);
+  console.log({ accountType, session });
 
   return (
     <AppContext.Provider
       value={{
+        idToken,
+        setIdToken,
         apiKey,
         buildType,
         address,
@@ -78,5 +93,13 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     </AppContext.Provider>
   );
 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UpdateSession = (data?: any) => Promise<NextAuthSession | null>;
 
 export const useAppContext = () => useContext(AppContext);
+export const useNextAuthSession = () =>
+  useSession() as {
+    data: NextAuthSession | null;
+    status: "authenticated" | "loading" | "unauthenticated";
+    update: UpdateSession;
+  };

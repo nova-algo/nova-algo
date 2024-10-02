@@ -1,3 +1,5 @@
+import { Session } from "next-auth";
+
 export interface Vault {
   id: string;
   name: string;
@@ -19,3 +21,6 @@ export interface Vault {
   capacity: string;
 }
 export type USER_ACCOUNT_TYPE = "WALLET" | "GOOGLE" | null;
+export interface NextAuthSession extends Session {
+  id_token?: string;
+}

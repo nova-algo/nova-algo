@@ -5,13 +5,13 @@ import type { AppProps } from "next/app";
 import { useEffect } from "react";
 import { fonts } from "@/lib/fonts";
 import { SessionProvider } from "next-auth/react";
-import { type Session } from "next-auth";
 import { AppContextProvider } from "@/context/app-context";
+import { NextAuthSession } from "@/types";
 
 export default function App({
   Component,
   pageProps: { session, ...pageProps },
-}: AppProps<{ session: Session }>) {
+}: AppProps<{ session: NextAuthSession }>) {
   useEffect(() => {
     import("@twa-dev/sdk").then((twa) => {
       const WebApp = twa.default;
@@ -22,6 +22,7 @@ export default function App({
     });
     createWalletConnectModal();
   }, []);
+
   return (
     <>
       <style jsx global>
@@ -31,6 +32,7 @@ export default function App({
           }
         `}
       </style>
+
       <SessionProvider session={session}>
         <AppContextProvider>
           <AppChakraProvider>
