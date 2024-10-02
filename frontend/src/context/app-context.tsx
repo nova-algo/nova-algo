@@ -44,11 +44,11 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       if (reownAccount.isConnected) {
+        setAccountType("WALLET");
         const balResult = await reownConnection?.getBalance(
           new PublicKey(reownAccount.address as string)
         );
         const bal = (balResult || 0) / LAMPORTS_PER_SOL + "";
-        setAccountType("WALLET");
         setBalance(bal);
         // setBalanceSymbol(reownConnection.get);
         setAddress(reownAccount.address!);
