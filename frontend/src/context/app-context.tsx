@@ -1,7 +1,10 @@
 import React, { createContext, ReactNode, useEffect, useState } from "react";
 import { useContext } from "react";
 import { OktoProvider, BuildType } from "okto-sdk-react";
-import * as reown from "@reown/appkit";
+import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { USER_ACCOUNT_TYPE } from "@/types";
 
 export const AppContext = createContext<{
   apiKey: string;
@@ -12,6 +15,8 @@ export const AppContext = createContext<{
   setBalance: (balance: string) => void;
   balanceSymbol: string;
   setBalanceSymbol: (balanceSymbol: string) => void;
+  accountType: USER_ACCOUNT_TYPE;
+  setAccountType: (type: USER_ACCOUNT_TYPE) => void;
 }>({
   apiKey: "",
   buildType: BuildType.SANDBOX,
@@ -21,20 +26,36 @@ export const AppContext = createContext<{
   setAddress: () => {},
   balance: "",
   setBalance: () => {},
+  accountType: null,
+  setAccountType: () => {},
 });
 
 const oktoApiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY!;
 export const AppContextProvider = ({ children }: { children: ReactNode }) => {
+  const reownAccount = useAppKitAccount();
+  const { connection: reownConnection } = useAppKitConnection();
+
   const [apiKey] = useState(oktoApiKey);
   const [buildType] = useState(BuildType.SANDBOX);
   const [address, setAddress] = useState("");
   const [balance, setBalance] = useState("");
   const [balanceSymbol, setBalanceSymbol] = useState("SOL");
+  const [accountType, setAccountType] = useState<USER_ACCOUNT_TYPE>(null);
   useEffect(() => {
-    setBalance(reown.AccountController.state.balance!);
-    setBalanceSymbol(reown.AccountController.state.balanceSymbol!);
-    setAddress(reown.AccountController.state.address!);
-  }, []);
+    (async () => {
+      if (reownAccount.isConnected) {
+        const balResult = await reownConnection?.getBalance(
+          new PublicKey(reownAccount.address as string)
+        );
+        const bal = (balResult || 0) / LAMPORTS_PER_SOL + "";
+        setAccountType("WALLET");
+        setBalance(bal);
+        // setBalanceSymbol(reownConnection.get);
+        setAddress(reownAccount.address!);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reownAccount]);
 
   return (
     <AppContext.Provider
@@ -47,6 +68,8 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         setBalance,
         balanceSymbol,
         setBalanceSymbol,
+        accountType,
+        setAccountType,
       }}
     >
       <OktoProvider apiKey={apiKey} buildType={buildType}>

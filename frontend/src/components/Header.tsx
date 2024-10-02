@@ -21,7 +21,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useSession, signOut } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useOkto, OktoContextType } from "okto-sdk-react";
 import { ResponsiveModalSheet } from "./SheetOrModal";
 import { FaGoogle } from "react-icons/fa";
@@ -31,18 +31,15 @@ import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
 import { useDisconnect } from "@web3modal/solana/react";
 import Navbar from "./Navbar";
-// import { useAppContext } from "@/context/app-context";
 import { Link } from "@chakra-ui/next-js";
-import * as reown from "@reown/appkit";
+
 import { useGoogleLogin } from "@/hooks";
+import { useAppContext } from "@/context/app-context";
 
 export default function Header() {
-  // const { address } = useAppContext();
+  const { address } = useAppContext();
   const { isLoading, handleLogin } = useGoogleLogin();
-  const [address, setAddress] = useState("");
-  useEffect(() => {
-    setAddress(reown.AccountController.state.address!);
-  }, []);
+ 
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
@@ -56,7 +53,16 @@ export default function Header() {
     onClose: onNavbarClose,
   } = useDisclosure();
   const { data: session } = useSession();
-  const { isLoggedIn, authenticate, logOut } = useOkto() as OktoContextType;
+  const {
+    isLoggedIn,
+    authenticate,
+    logOut,
+    showWidgetModal,
+    // getPortfolio,
+    // getSupportedTokens,
+    // getWallets,
+    // getUserDetails,
+  } = useOkto() as OktoContextType;
   const idToken = useMemo(
     () =>
       session
@@ -66,34 +72,30 @@ export default function Header() {
     [session]
   );
 
-  const authenticateCB = useCallback(
-    (idToken: string, cb: (result: any, error: any) => void) =>
-      authenticate(idToken, cb),
-    [authenticate]
-  );
-  useEffect(() => {
-    async function handleAuthenticate(): Promise<any> {
-      console.log({ idToken }, "start authenticate");
-      if (!idToken) {
-        return { result: false, error: "No google login" };
-      }
+  async function handleAuthenticate(): Promise<any> {
+    console.log({ idToken }, "start authenticate");
+    if (!idToken) {
+      return { result: false, error: "No google login" };
+    }
 
-      return new Promise((resolve) => {
-        authenticateCB(idToken, (result: any, error: any) => {
-          if (result) {
-            resolve({ result: true });
-          } else if (error) {
-            resolve({ result: false, error });
-          }
-        });
+    return new Promise((resolve) => {
+      authenticate(idToken, (result: any, error: any) => {
+        if (result) {
+          resolve({ result: true });
+        } else if (error) {
+          resolve({ result: false, error });
+        }
       });
-    }
-    if (session) {
+    });
+  }
+  useEffect(() => {
+    if (session && !isLoggedIn) {
       handleAuthenticate();
-      // createWallet();
-      // getUserDetails();
+
+      // fetchWallets();
     }
-  }, [authenticateCB, idToken, session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, isLoggedIn]);
 
   // async function fetchWallets() {
   //   try {
@@ -165,6 +167,7 @@ export default function Header() {
               maxW={"100px"}
             />
           </Box>
+          <Button onClick={async () => showWidgetModal()}>create wallet</Button>
           <Box hideBelow={"md"}>
             <DarkMode>
               <Navbar />

@@ -18,3 +18,4 @@ export interface Vault {
   tvl: string;
   capacity: string;
 }
+export type USER_ACCOUNT_TYPE = "WALLET" | "GOOGLE" | null;

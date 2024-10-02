@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -20,9 +20,7 @@ import {
 import { useFormik } from "formik";
 import { motion } from "framer-motion";
 import { CustomRadioGroup } from "./CustomRadioGroup";
-// import { useAppContext } from "@/context/app-context";
-import * as reown from "@reown/appkit";
-
+import { useAppContext } from "@/context/app-context";
 const MotionBox = motion(Box as any);
 const MotionButton = motion(Button as any);
 
@@ -136,12 +134,7 @@ export const DepositOrWithdrawalBox = ({}: {
   maxW?: string;
   width?: string | Record<string, any>;
 }) => {
-  const [balance, setBalance] = useState("");
-  const [balanceSymbol, setBalanceSymbol] = useState("SOL");
-  useEffect(() => {
-    setBalance(reown.AccountController.state.balance!);
-    setBalanceSymbol(reown.AccountController.state.balanceSymbol!);
-  }, []);
+  const { balance, balanceSymbol } = useAppContext();
 
   const [, setActiveTab] = useState(0);
   const bgColor = useColorModeValue("white", "gray.800");
