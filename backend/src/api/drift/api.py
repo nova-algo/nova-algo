@@ -38,7 +38,7 @@ from driftpy.types import (
     UserAccount,
     Order,
     ModifyOrderParams, 
-    OraclePriceData
+    OraclePriceData,
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
@@ -59,9 +59,11 @@ from driftpy.math.perp_position import (
     is_available
 )
 from driftpy.keypair import load_keypair
-from src.common.types import PositionType
+from src.common.types import MarketAccountType, PositionType
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+from solana.rpc import commitment
+import pprint
 
 class DriftAPI:
     """
@@ -265,7 +267,7 @@ class DriftAPI:
 
             direction = "BUY" if order_params.direction == PositionDirection.Long() else "SELL"
             logger.info(f"{order_params.market_type} limit {direction} order placed, order tx: {order_tx_sig}")
-            return order_tx_sig
+            return str(order_tx_sig)
 
         except Exception as e:
             logger.error(f"Error placing limit order: {str(e)}")
@@ -710,21 +712,158 @@ class DriftAPI:
             logger.error(f"Error getting market price data: {e}")
             return None
 
+    
+    def get_market(self, market_index: int, market_type: MarketType) -> Optional[MarketAccountType]:
+        """
+        Get the market account for a given market index and type.
+
+        Args:
+            market_index (int): The index of the market.
+            market_type (MarketType): The type of the market (Perp or Spot).
+
+        Returns:
+            Optional[Union[PerpMarketAccount, SpotMarketAccount]]: The market account, or None if not found.
+        """
+        if market_type == MarketType.Perp():
+            return self.drift_client.get_perp_market_account(market_index)
+        elif market_type == MarketType.Spot():
+            return self.drift_client.get_spot_market_account(market_index)
+        else:
+            print(f"Warning: Invalid market type: {market_type}")
+            return None
+        
+    
 
 
+    async def view_logs(sig: str, connection: AsyncClient):
+        connection._commitment = commitment.Confirmed
+        logs = ""
+        try:
+            await connection.confirm_transaction(sig, commitment.Confirmed)
+            logs = (await connection.get_transaction(sig))["result"]["meta"]["logMessages"]
+        finally:
+            connection._commitment = commitment.Processed
+        pprint.pprint(logs)
+    
+    
+    #You can cross check the order id gotten from here and comparing it with the nextOrderId you got from the UserAccount before you called this function
+    async def place_limit_order_and_get_order_id(self, order_params: OrderParams) -> Optional[Tuple[str, int]]:
+        try:
+            if order_params.market_type == MarketType.Perp():
+                order_tx_sig = await self.drift_client.place_perp_order(order_params)
+            elif order_params.market_type == MarketType.Spot():
+                order_tx_sig = await self.drift_client.place_spot_order(order_params)
+            else:
+                logger.warning(f"Unsupported market type: {order_params.market_type}")
+                return None
+
+            # Wait for the transaction to be confirmed
+            await self.drift_client.connection.confirm_transaction(order_tx_sig)
+
+            # Get the order ID from the transaction logs
+            order_id = await self.get_order_id_from_tx_signature(self.drift_client.connection, order_tx_sig)
+
+            if order_id is not None:
+                direction = "BUY" if order_params.direction == PositionDirection.Long() else "SELL"
+                logger.info(f"{order_params.market_type} limit {direction} order placed, order tx: {order_tx_sig}, order ID: {order_id}")
+                return str(order_tx_sig), order_id
+            else:
+                logger.warning(f"Failed to retrieve order ID from transaction logs for tx: {order_tx_sig}")
+                return str(order_tx_sig), None
+
+        except Exception as e:
+            logger.error(f"Error placing limit order: {str(e)}")
+            return None
+
+    async def get_order_id_from_tx_signature(self, connection: AsyncClient, tx_sig: str) -> Optional[int]:
+        try:
+            tx_info = await connection.get_transaction(tx_sig, commitment=commitment.Confirmed)
+            if tx_info and 'result' in tx_info and 'meta' in tx_info['result']:
+                logs = tx_info['result']['meta']['logMessages']
+                for log in logs:
+                    if "OrderRecord" in log:
+                        try:
+                            json_str = log[log.index("{"):log.rindex("}")+1]
+                            order_record = json.loads(json_str)
+                            return order_record['order']['orderId']
+                        except (ValueError, KeyError, json.JSONDecodeError) as e:
+                            logger.warning(f"Error parsing OrderRecord from log: {str(e)}")
+                            continue
+            logger.warning(f"No OrderRecord found in transaction logs for tx: {tx_sig}")
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching transaction logs: {str(e)}")
+            return None
+    
+    def get_user_orders_map(self) -> Dict[int, Order]:
+        """
+        Retrieves all open user orders and maps each order ID to its corresponding Order object.
+
+        Returns:
+            Dict[int, Order]: A dictionary where the key is the order ID and the value is the Order object.
+        """
+        user_account = self.drift_client.get_user_account()
+        orders_map = {}
+
+        for order in user_account.orders:
+            # Check if the order status is Open
+            if "Open" in str(order.status):
+                orders_map[order.order_id] = order
+
+        return orders_map
+
+    # Another idea to get order id is you could get the orders of the user before and after the tx and see what the order was
+    
+    # How do I get an order id after placing an order?
+    # The UserAccount that placed the order has a list of orders in UserAccount.orders that has the ids, the user account also has nextOrderId 
+    # the order ID will be in the records(order records) that come through after you place it. You also know "ahead of time" what it will
+    # be because it is always the user's nextOrderId on their account which monotonically increases, so you could always check if the order
+    # from the records is equal to the nextOrderId from the user account and that would be the order id
+
+    # and lastly maybe you can minus one from nextOrderId to get the order id of the order that was just closed, but this should be the least preferred method
 
 
+    # async def place_limit_order_and_get_order_id(self, order_params: OrderParams) -> Optional[Tuple[str, int]]:
+    #         try:
+    #             if order_params.market_type == MarketType.Perp():
+    #                 order_tx_sig = await self.drift_client.place_perp_order(order_params)
+    #             elif order_params.market_type == MarketType.Spot():
+    #                 order_tx_sig = await self.drift_client.place_spot_order(order_params)
+    #             else:
+    #                 raise ValueError(f"Unsupported market type: {order_params.market_type}")
+
+    #             # Wait for the transaction to be confirmed
+    #             await self.drift_client.connection.confirm_transaction(order_tx_sig)
+
+    #             # Get the order ID from the transaction logs
+    #             order_id = await self.get_order_id_from_tx_signature(self.drift_client.connection, order_tx_sig)
+
+    #             if order_id is not None:
+    #                 direction = "BUY" if order_params.direction == PositionDirection.Long() else "SELL"
+    #                 logger.info(f"{order_params.market_type} limit {direction} order placed, order tx: {order_tx_sig}, order ID: {order_id}")
+    #                 return str(order_tx_sig), order_id
+    #             else:
+    #                 logger.error(f"Failed to retrieve order ID from transaction logs")
+    #                 return None
+
+    #         except Exception as e:
+    #             logger.error(f"Error placing limit order: {str(e)}")
+    #             return None
 
 
-
-
-
-
-
-
-
-
-
+    #     async def get_order_id_from_tx_signature(connection: AsyncClient, tx_sig: str) -> Optional[int]:
+    #         try:
+    #             tx_info = await connection.get_transaction(tx_sig, commitment=commitment.Confirmed)
+    #             if tx_info and 'result' in tx_info and 'meta' in tx_info['result']:
+    #                 logs = tx_info['result']['meta']['logMessages']
+    #                 for log in logs:
+    #                     if "OrderRecord" in log:
+    #                         order_record = json.loads(log[log.index("{"):])
+    #                         return order_record['order']['orderId']
+    #             return None
+    #         except Exception as e:
+    #             print(f"Error fetching transaction logs: {str(e)}")
+    #             return None
 
 
       

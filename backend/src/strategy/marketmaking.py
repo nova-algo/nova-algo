@@ -10,7 +10,7 @@ from io import StringIO
 from driftpy.types import OrderType, OrderParams, PositionDirection, MarketType # type: ignore
 from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
 from src.api.drift.api import DriftAPI
-from src.common.types import MarketMakerConfig, Bot, PositionType
+from src.common.types import MarketAccountType, MarketMakerConfig, Bot, PositionType
 from typing import Optional
 
 # Configure logging
@@ -171,8 +171,8 @@ class MarketMaker(Bot):
         
         # Adjust spread based on market volatility
         if self.last_trade_price:
-            market = self.drift_api.get_market(self.market_index)
-            current_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+            market_price_data = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+            current_price = Decimal(str(market_price_data.price)) / PRICE_PRECISION
             price_change = abs(current_price - self.last_trade_price) / self.last_trade_price
             spread += price_change * Decimal('0.5')  # Increase spread by 50% of the price change
         
@@ -186,9 +186,8 @@ class MarketMaker(Bot):
         :return: Two lists of Decimals, representing buy and sell prices
         """
         spread = self.calculate_dynamic_spread()
-        market = self.drift_api.get_market(self.market_index)
-        mid_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
-        
+        market_price_data = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+        mid_price = Decimal(str(market_price_data.price)) / PRICE_PRECISION
         half_spread = spread / 2
         buy_prices = [mid_price - half_spread - Decimal('0.01') * i for i in range(self.config.num_levels)]
         sell_prices = [mid_price + half_spread + Decimal('0.01') * i for i in range(self.config.num_levels)]
@@ -215,8 +214,17 @@ class MarketMaker(Bot):
                 market_index=self.market_index,
                 reduce_only=False
             )
-            buy_order = await self.drift_api.drift_client.place_order(buy_params)
-            self.current_orders[buy_order.order_id] = buy_params
+            result = await self.drift_api.place_limit_order_and_get_order_id(buy_params)
+            if result:
+                tx_sig, order_id = result
+                if order_id is not None:
+                    print(f"Order placed successfully. Tx sig: {tx_sig}, Order ID: {order_id}")
+                else:
+                    print(f"Order placed, but couldn't retrieve Order ID. Tx sig: {tx_sig}")
+            else:
+                print("Failed to place order")
+
+            self.current_orders[order_id] = buy_params
             
             # Place sell order
             sell_params = OrderParams(
@@ -228,8 +236,20 @@ class MarketMaker(Bot):
                 market_index=self.market_index,
                 reduce_only=False
             )
-            sell_order = await self.drift_api.drift_client.place_order(sell_params)
-            self.current_orders[sell_order.order_id] = sell_params
+            result = await self.drift_api.place_limit_order_and_get_order_id(sell_params)
+            
+            if result:
+                tx_sig, order_id = result
+                if order_id is not None:
+                    print(f"Order placed successfully. Tx sig: {tx_sig}, Order ID: {order_id}")
+                else:
+                    print(f"Order placed, but couldn't retrieve Order ID. Tx sig: {tx_sig}")
+            else:
+                print("Failed to place order")
+
+            self.current_orders[order_id] = sell_params
+            #self.current_orders = self.drift_api.get_user_orders_map()
+            
         
         logger.info(f"Placed {len(self.current_orders)} orders")
 
@@ -258,14 +278,14 @@ class MarketMaker(Bot):
                 reduce_only=False
             )
             
-            await self.drift_api.drift_client.place_order(order_params)
+            await self.drift_api.place_limit_order(order_params)
             logger.info(f"Placed inventory management order: {'sell' if direction == PositionDirection.Short() else 'buy'} {size}")
 
     async def update_position(self):
         """
         Update the current position size.
         """
-        position = await self.drift_api.get_position(self.market_index)
+        position: PositionType = await self.drift_api.get_position(self.market_index)
         if position:
             self.position_size = Decimal(str(position.base_asset_amount)) / BASE_PRECISION
         else:
