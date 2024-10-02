@@ -25,7 +25,7 @@ import MarkdownRenderer from "@/components/MarkdownRenderer";
 import SectionHeading from "@/components/SectionHeading";
 import VaultChart from "@/components/VaultChart";
 
-import vaults from "@/lib/vaults.json";
+// import vaults from "@/lib/vaults.json";
 import Header from "@/components/Header";
 import Head from "next/head";
 import Footer from "@/components/Footer";
@@ -304,8 +304,37 @@ export default function VaultPage({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
-  const { vaultId } = ctx.query;
-  const vault = vaults.find((v) => v.id === (vaultId as string));
+  // const { vaultId } = ctx.query;
+  const vault = {
+    id: "1",
+    name: "Alpha Vault",
+    description: "High-risk, high-reward Advanced strategy",
+    performance: "+25% YTD",
+    avatar: "/images/colored-logo-sm.png",
+    risk: "**Market Risk**\n\nAlpha Vault is exposed to market risk as it takes directional positions based on supply and demand zones. If the market moves against the predicted direction, the strategy may incur losses. Sudden market shifts or unexpected events can invalidate the identified zones, leading to potential losses.\n\n**Liquidity Risk**\n\nThe strategy relies on the liquidity available on the Drift protocol to execute its trades. If there is insufficient liquidity at the desired price levels, the strategy may face difficulties in entering or exiting positions, potentially impacting its profitability. Low liquidity can also result in slippage, where the actual execution price differs from the intended price.\n\n**Technical Risk**\n\nAs the strategy is implemented using code and interacts with the Drift protocol, it is subject to technical risks such as software bugs, vulnerabilities, or failures in the underlying blockchain infrastructure. Any issues or disruptions in the code or the Drift protocol could lead to unexpected behavior or losses for the strategy.",
+    strategy:
+      "Alpha Vault employs a supply and demand zone trading strategy on the Drift protocol, primarily focused on SOL perpetual swaps. The strategy aims to identify key supply and demand zones based on historical price data and places limit orders at these levels to capture potential price reversals. The strategy also incorporates a kill switch mechanism to close positions when certain profit or loss thresholds are met.\n\n**The strategy is built on the Drift protocol, which is a decentralized perpetual swap exchange on the Solana blockchain. Funds are stored in a non-custodial wallet, meaning they cannot be withdrawn by anyone but you.**",
+    depositTokens: [
+      {
+        name: "USDC",
+        image: "/icons/usdc.svg",
+      },
+    ],
+    tradingTokens: [
+      {
+        name: "SOL",
+        image: "/icons/sol.svg",
+      },
+      {
+        name: "JUP",
+        image: "/icons/jup.svg",
+      },
+    ],
+    apy: "41.24%",
+    tvl: "$25.9M",
+    capacity: "86.48%",
+  };
   return { props: { vault } };
 }

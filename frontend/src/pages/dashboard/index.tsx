@@ -16,6 +16,7 @@ import {
   DrawerCloseButton,
   useDisclosure,
   useBreakpointValue,
+  Image,
 } from "@chakra-ui/react";
 import {
   LuWallet,
@@ -37,7 +38,12 @@ const UserDashboard = () => {
   const { data: session } = useNextAuthSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
-  async function handleMercuryo() {}
+  async function handleMercuryo() {
+    window.open(
+      "https://sandbox-exchange.mrcr.io?address=0xA14691F9f1F851bd0c20115Ec10B25FC174371DF&widget_id=498a52be-6c66-415d-b9a6-44987d8dc031?signature=c20283cedb882fbfd27fc7ee0cfe6db930b732f669a3abee698967e3984ae7dfd24e058d7cecf37da0bb2fb133a24e47b4b3fc34578788ca07857f6ed1129284",
+      "_blank"
+    );
+  }
   return (
     <Flex>
       {!isMobile && (
@@ -49,6 +55,14 @@ const UserDashboard = () => {
           pos={"sticky"}
           top={0}
         >
+          <Image
+            src="/images/desktop-logo-white.png"
+            alt="app logo"
+            maxW={"100px"}
+            ml={3}
+            mixBlendMode={"difference"}
+            mb={5}
+          />
           <Sidebar />
         </Box>
       )}
