@@ -123,33 +123,51 @@ class DriftAPI:
 
         logger.info(f"Using public key: {kp.pubkey()}")
 
-
-        # #Set the appropriate URL based on the environment (devnet or mainnet)
-        # if self.env == "devnet":
-        #     url = "https://devnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
-        # elif self.env == "mainnet":
-        #     url = "https://mainnet.helius-rpc.com/?api-key=3a1ca16d-e181-4755-9fe7-eac27579b48c"
-        # else:
-        #     raise NotImplementedError("only devnet/mainnet env supported")
-            
         self.connection = AsyncClient(url)
         bulk_account_loader = BulkAccountLoader(self.connection)
 
         self.drift_client = DriftClient(
             self.connection,
             wallet,
-            #self.env,
-            "devnet",
+            self.env,
             account_subscription=AccountSubscriptionConfig(subscription_type, bulk_account_loader=bulk_account_loader),
         )
         
-        await self.drift_client.initialize_user()
-        logger.info("Drift client user initialized successfully")
+        try:
+            await self.drift_client.initialize_user()
+            logger.info("Drift client user initialized successfully")
+        except Exception as e:
+            if "custom program error: 0x0" in str(e):
+                logger.info("User already initialized. Proceeding with existing user.")
+            else:
+                raise e
+
+        try:
+            await self.drift_client.subscribe()
+            logger.info("Drift client subscribed successfully")
+        except Exception as e:
+            logger.error(f"Error subscribing to Drift client: {str(e)}")
+            raise e
 
         # Add the user with the specified subaccount ID and subscribe to updates
         # await self.drift_client.add_user(subaccount_id)
         # await self.drift_client.subscribe()
     
+    async def close(self):
+        """
+        Closes the connection and cleans up resources.
+        """
+        if self.connection:
+            await self.connection.close()
+            self.connection = None
+        if self.drift_client:
+            # If DriftClient has a close method, call it here
+            # await self.drift_client.close()
+            self.drift_client = None
+        self.user_account = None
+        self.keypair = None
+        logger.info("DriftAPI connection closed and resources cleaned up.")
+
     async def cancel_orders_for_market(self, market_type: MarketType, market_index: int, subaccount_id: Optional[Pubkey] = None):
         """
         Cancels all open orders for a specific market.
@@ -240,7 +258,7 @@ class DriftAPI:
 
 
 
-    async def place_limit_order(self, order_params: OrderParams) -> Optional[str]:
+    async def place_order(self, order_params: OrderParams) -> Optional[str]:
         """
         Places a limit order using the Drift client.
 
@@ -250,9 +268,6 @@ class DriftAPI:
         :param order_params: The parameters for the limit order.
         :return: The order transaction signature.
         """
-        if not isinstance(order_params.market_type, MarketType):
-            logger.error("Invalid market type in order_params")
-            raise ValueError("Valid MarketType must be specified in order_params")
         if not isinstance(order_params.market_type, MarketType):
             logger.error("Invalid market type in order_params")
             raise ValueError("Valid MarketType must be specified in order_params")
@@ -270,7 +285,7 @@ class DriftAPI:
             return str(order_tx_sig)
 
         except Exception as e:
-            logger.error(f"Error placing limit order: {str(e)}")
+            logger.error(f"Error placing order: {str(e)}")
             return None
 
     def get_position(self, market_index: int, market_type: MarketType) -> Optional[PositionType]:
@@ -304,7 +319,7 @@ class DriftAPI:
             logger.error(f"Error retrieving user information: {str(e)}")
             raise  # This re-raises the caught exception
 
-    def get_open_orders(self) -> list[Order]:
+    async def get_open_orders(self, subaccount_id: Optional[int] = None) -> list[Order]:
         """
         Retrieves the list of user's open orders.
 
@@ -314,13 +329,15 @@ class DriftAPI:
             list: A list of open orders.
         """
         try:
-            user = self.drift_client.get_user()
-            open_orders = user.get_open_orders()
+            user = self.drift_client.get_user(subaccount_id)
+            #open_orders = user.get_open_orders()
+            open_orders = await asyncio.to_thread(user.get_open_orders)
             logger.info(f"Retrieved {len(open_orders)} open orders.")
             return open_orders
         except Exception as e:
             logger.error(f"Error retrieving open orders: {str(e)}")
-            raise  # This re-raises the caught exception
+            logger.warning("Returning an empty list of orders due to the error.")
+            return []
     
     def get_market_index_and_type(self, name: str) -> Tuple[int, MarketType]:
         """
@@ -747,7 +764,7 @@ class DriftAPI:
     
     
     #You can cross check the order id gotten from here and comparing it with the nextOrderId you got from the UserAccount before you called this function
-    async def place_limit_order_and_get_order_id(self, order_params: OrderParams) -> Optional[Tuple[str, int]]:
+    async def place_order_and_get_order_id(self, order_params: OrderParams) -> Optional[Tuple[str, int]]:
         try:
             if order_params.market_type == MarketType.Perp():
                 order_tx_sig = await self.drift_client.place_perp_order(order_params)
@@ -961,8 +978,90 @@ class DriftAPI:
     #     return all_positions
 
 
+    #from the perp filler example
+    
+    # async def settle_pnls(self):
+    #     logger.info("settle_pnls started, attempting to acquire task_lock...")
+    #     now = time.time()
 
+    #     if now < self.last_settle_pnl + (SETTLE_POSITIVE_PNL_COOLDOWN_MS // 1_000):
+    #         logger.info("tried to settle positive pnl, but still cooling down...")
+    #         return
 
+    #     user = self.drift_client.get_user()
+    #     market_indexes = [pos.market_index for pos in user.get_active_perp_positions()]
+
+    #     # If we try to settle pnl on a market with a different status than active it'll fail our ix
+    #     # So we filter them out
+    #     for market in market_indexes:
+    #         perp_market = self.drift_client.get_perp_market_account(market)
+    #         if not is_variant(perp_market.status, "Active"):
+    #             market_indexes.remove(perp_market.market_index)
+
+    #     if len(market_indexes) < MAX_POSITIONS_PER_USER:
+    #         logger.warning(
+    #             f"active positions less than max (actual: {len(market_indexes)}, max: {MAX_POSITIONS_PER_USER})"
+    #         )
+    #         return
+
+    #     async with self.task_lock:
+    #         logger.info("settle_pnl acquired task_lock ")
+    #         attempt = 0
+    #         while attempt < 3:
+    #             user = self.drift_client.get_user()
+    #             market_indexes = [
+    #                 pos.market_index for pos in user.get_active_perp_positions()
+    #             ]
+
+    #             if len(market_indexes) <= 1:
+    #                 break
+
+    #             chunk_size = len(market_indexes) // 2
+
+    #             for i in range(0, len(market_indexes), chunk_size):
+    #                 chunk = market_indexes[i : i + chunk_size]
+    #                 logger.critical(f"settle pnl: {attempt} processing chunk: {chunk}")
+    #                 try:
+    #                     ixs = [set_compute_unit_limit(MAX_CU_PER_TX)]
+    #                     users = {
+    #                         user.user_public_key: self.drift_client.get_user_account()
+    #                     }
+    #                     settle_ixs = self.drift_client.get_settle_pnl_ixs(users, chunk)
+    #                     ixs += settle_ixs
+
+    #                     sim_result = await simulate_and_get_tx_with_cus(
+    #                         ixs,
+    #                         self.drift_client,
+    #                         self.drift_client.tx_sender,
+    #                         self.lookup_tables,
+    #                         [],
+    #                         SIM_CU_ESTIMATE_MULTIPLIER,
+    #                         True,
+    #                         self.simulate_tx_for_cu_estimate,
+    #                     )
+
+    #                     logger.info(
+    #                         f"settle_pnls estimate CUs: {sim_result.cu_estimate}"
+    #                     )
+    #                     if self.simulate_tx_for_cu_estimate and sim_result.sim_error:
+    #                         logger.error(
+    #                             f"settle_pnls sim error: {sim_result.sim_error}"
+    #                         )
+    #                     else:
+    #                         sig = await self.drift_client.tx_sender.send(sim_result.tx)
+    #                         await asyncio.sleep(0)  # breathe
+    #                         logger.success(f"settled pnl, tx sig: {sig.tx_sig}")
+
+    #                 except Exception as e:
+    #                     logger.error(
+    #                         f"error occurred settling pnl for markets {chunk}: {e}"
+    #                     )
+
+    #             attempt += 1
+
+    #         self.last_settle_pnl = now
+    #         duration = time.time() - now
+    #         logger.success(f"settle_pnls done, took {duration}s")
 
 
 
