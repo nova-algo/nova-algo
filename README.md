@@ -67,7 +67,7 @@ To install this project:
    Change into the project directory:
 
    ```
-   cd nova_algo/backend
+   cd nova-algo/backend
    ```
 
 3. **Set up Python Environment**

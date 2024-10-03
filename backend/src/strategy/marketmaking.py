@@ -214,7 +214,7 @@ class MarketMaker(Bot):
                 market_index=self.market_index,
                 reduce_only=False
             )
-            result = await self.drift_api.place_limit_order_and_get_order_id(buy_params)
+            result = await self.drift_api.place_order_and_get_order_id(buy_params)
             if result:
                 tx_sig, order_id = result
                 if order_id is not None:
@@ -236,7 +236,7 @@ class MarketMaker(Bot):
                 market_index=self.market_index,
                 reduce_only=False
             )
-            result = await self.drift_api.place_limit_order_and_get_order_id(sell_params)
+            result = await self.drift_api.place_order_and_get_order_id(sell_params)
             
             if result:
                 tx_sig, order_id = result
@@ -250,7 +250,6 @@ class MarketMaker(Bot):
             self.current_orders[order_id] = sell_params
             #self.current_orders = self.drift_api.get_user_orders_map()
             
-        
         logger.info(f"Placed {len(self.current_orders)} orders")
 
     async def cancel_all_orders(self):
@@ -278,7 +277,7 @@ class MarketMaker(Bot):
                 reduce_only=False
             )
             
-            await self.drift_api.place_limit_order(order_params)
+            await self.drift_api.place_order(order_params)
             logger.info(f"Placed inventory management order: {'sell' if direction == PositionDirection.Short() else 'buy'} {size}")
 
     async def update_position(self):
