@@ -50,12 +50,13 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       if (reownAccount.isConnected) {
+        const publicKey = new PublicKey(reownAccount.address as string);
         setAccountType("WALLET");
-        const balResult = await reownConnection?.getBalance(
-          new PublicKey(reownAccount.address as string)
-        );
-        const bal = (balResult || 0) / LAMPORTS_PER_SOL + "";
-        setBalance(bal);
+        try {
+          const balResult = await reownConnection?.getBalance(publicKey);
+          const bal = (balResult || 0) / LAMPORTS_PER_SOL + "";
+          setBalance(bal);
+        } catch (error) {}
         // setBalanceSymbol(reownConnection.get);
         setAddress(reownAccount.address!);
       }
@@ -68,7 +69,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       setIdToken(session?.id_token as string);
     }
   }, [session]);
-  console.log({ accountType, session });
 
   return (
     <AppContext.Provider

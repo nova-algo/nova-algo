@@ -28,14 +28,15 @@ import { LuMenu } from "react-icons/lu";
 
 import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
-import { useDisconnect } from "@web3modal/solana/react";
+import { useDisconnect } from "@reown/appkit-solana/react";
+
 import Navbar from "./Navbar";
 import { Link } from "@chakra-ui/next-js";
 import { useAppContext, useNextAuthSession } from "@/context/app-context";
 import { GoogleLogin } from "./GoogleLogin";
 
 export default function Header() {
-  const { address, idToken } = useAppContext();
+  const { address, idToken, setAddress } = useAppContext();
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
@@ -127,7 +128,8 @@ export default function Header() {
     }
   }
   async function handleLogout() {
-    disconnect();
+    await disconnect();
+    setAddress("");
     session && (await signOut());
     isLoggedIn && logOut();
   }
