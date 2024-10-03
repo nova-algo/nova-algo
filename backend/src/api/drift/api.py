@@ -149,6 +149,13 @@ class DriftAPI:
             logger.error(f"Error subscribing to Drift client: {str(e)}")
             raise e
 
+        # try:
+        #     await self.drift_client.add_user(0)
+        #     logger.info("Added a sub account successfully")
+        # except Exception as e:
+        #     logger.error(f"Error adding sub account: {str(e)}")
+        #     raise e
+
         # Add the user with the specified subaccount ID and subscribe to updates
         # await self.drift_client.add_user(subaccount_id)
         # await self.drift_client.subscribe()
@@ -258,7 +265,7 @@ class DriftAPI:
 
 
 
-    async def place_order(self, order_params: OrderParams) -> Optional[str]:
+    async def place_order(self, order_params: OrderParams, subaccount_id: Optional[int] = None) -> Optional[str]:
         """
         Places a limit order using the Drift client.
 
@@ -268,15 +275,16 @@ class DriftAPI:
         :param order_params: The parameters for the limit order.
         :return: The order transaction signature.
         """
+        #self.drift_client.add_user(subaccount_id)
         if not isinstance(order_params.market_type, MarketType):
             logger.error("Invalid market type in order_params")
             raise ValueError("Valid MarketType must be specified in order_params")
 
         try:
             if order_params.market_type == MarketType.Perp():
-                order_tx_sig = await self.drift_client.place_perp_order(order_params)
+                order_tx_sig = await self.drift_client.place_perp_order(order_params, subaccount_id)
             elif order_params.market_type == MarketType.Spot():
-                order_tx_sig = await self.drift_client.place_spot_order(order_params)
+                order_tx_sig = await self.drift_client.place_spot_order(order_params, subaccount_id)
             else:
                 raise ValueError(f"Unsupported market type: {order_params.market_type}")
 
@@ -304,7 +312,7 @@ class DriftAPI:
 
         return position
     
-    def get_user_account(self) -> UserAccount:
+    def get_user_account(self, subaccount_id: Optional[int] = None) -> UserAccount:
         """
         Retrieves the user information and stores it in self.user.
 
@@ -312,7 +320,7 @@ class DriftAPI:
         and other useful information, and assigns it to the self.user attribute.
         """
         try:
-            self.user_account = self.drift_client.get_user_account()
+            self.user_account = self.drift_client.get_user_account(subaccount_id)
             logger.info(f"User retrieved successfully. User ID: {self.user_account.authority}")
             return self.user_account
         except Exception as e:
@@ -328,6 +336,7 @@ class DriftAPI:
         Returns:
             list: A list of open orders.
         """
+        #self.drift_client.add_user(subaccount_id)
         try:
             user = self.drift_client.get_user(subaccount_id)
             #open_orders = user.get_open_orders()
