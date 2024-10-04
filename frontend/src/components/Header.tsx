@@ -22,26 +22,23 @@ import {
 } from "@chakra-ui/react";
 import { signOut } from "next-auth/react";
 import { useEffect } from "react";
-import { useOkto, OktoContextType } from "okto-sdk-react";
+import { useOkto, OktoContextType, WalletData } from "okto-sdk-react";
 import { ResponsiveModalSheet } from "./SheetOrModal";
 import { LuMenu } from "react-icons/lu";
-
 import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
-import { useDisconnect } from "@reown/appkit-solana/react";
-
 import Navbar from "./Navbar";
 import { Link } from "@chakra-ui/next-js";
 import { useAppContext, useNextAuthSession } from "@/context/app-context";
 import { GoogleLogin } from "./GoogleLogin";
 
 export default function Header() {
-  const { address, idToken, setAddress } = useAppContext();
+  const { address, idToken, setAddress, appkitModal } = useAppContext();
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
   });
-  const { disconnect } = useDisconnect();
+  // const { disconnect } = useDisconnect();
   const bgColor = useColorModeValue("#1b1b1b", "gray.900");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
@@ -55,11 +52,11 @@ export default function Header() {
     authenticate,
     logOut,
     // showWidgetModal,
-    createWallet,
-    getPortfolio,
-    getSupportedTokens,
-    getWallets,
-    getUserDetails,
+    // createWallet,
+    // getPortfolio,
+    // getSupportedTokens,
+    // getWallets,
+    // getUserDetails,
   } = useOkto() as OktoContextType;
 
   async function handleAuthenticate(): Promise<any> {
@@ -78,61 +75,110 @@ export default function Header() {
       });
     });
   }
+
+  const createWallet = async (authToken: string) => {
+    const baseUrl = "https://sandbox-api.okto.tech";
+    const apiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY;
+
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/wallet`, {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey || "",
+          accept: "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Wallet created:", data);
+      return data.data as WalletData;
+    } catch (error) {
+      console.error("Failed to create wallet:", error);
+      throw error;
+    }
+  };
   useEffect(() => {
+    let authToken = "";
     (async () => {
       if (idToken && !isLoggedIn) {
-        await handleAuthenticate();
+        handleAuthenticate().then(async () => {
+          if (typeof window !== "undefined") {
+            const authDetails = JSON.parse(
+              localStorage.getItem("AUTH_DETAILS") || "{}"
+            );
+            authToken = authDetails.authToken;
+          }
+          const { wallets } = await createWallet(authToken);
+          console.log({ wallets });
+
+          if (wallets.length > 0) {
+            const solWallet = wallets.find(
+              (wallet) => wallet.network_name.toLowerCase() === "solana"
+            );
+            setAddress(solWallet?.address as string);
+          }
+        });
 
         // fetchWallets();
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idToken, isLoggedIn]);
+  }, [idToken]);
 
-  async function fetchWallets() {
-    try {
-      const supportedNetworks = await createWallet();
+  // async function fetchWallets() {
+  //   try {
+  //     const createdWallet = await createWallet();
 
-      // await getSupportedNetworks();
-      console.log("Supported networks:", supportedNetworks);
-    } catch (error) {
-      console.error("Error fetching supported networks:", error);
-    }
+  //     // await getSupportedNetworks();
+  //     console.log("Created wallet:", createdWallet);
+  //   } catch (error) {
+  //     console.error("Error creating wallet :", error);
+  //   }
 
-    try {
-      const supportedTokens = await getSupportedTokens();
-      console.log("Supported tokens:", supportedTokens);
-    } catch (error) {
-      console.error("Error fetching supported tokens:", error);
-    }
+  //   try {
+  //     const supportedTokens = await getSupportedTokens();
+  //     console.log("Supported tokens:", supportedTokens);
+  //   } catch (error) {
+  //     console.error("Error fetching supported tokens:", error);
+  //   }
 
-    try {
-      const wallets = await getWallets();
-      console.log("Wallets:", wallets);
-    } catch (error) {
-      console.error("Error fetching wallets:", error);
-    }
+  //   try {
+  //     const wallets = await getWallets();
+  //     console.log("Wallets:", wallets);
+  //   } catch (error) {
+  //     console.error("Error fetching wallets:", error);
+  //   }
 
-    try {
-      const userDetails = await getUserDetails();
-      console.log("User details:", userDetails);
-    } catch (error) {
-      console.error("Error fetching user details:", error);
-    }
+  //   try {
+  //     const userDetails = await getUserDetails();
+  //     console.log("User details:", userDetails);
+  //   } catch (error) {
+  //     console.error("Error fetching user details:", error);
+  //   }
 
-    try {
-      const portfolio = await getPortfolio();
-      console.log("Portfolio:", portfolio);
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-    }
-  }
+  //   try {
+  //     const portfolio = await getPortfolio();
+  //     console.log("Portfolio:", portfolio);
+  //   } catch (error) {
+  //     console.error("Error fetching portfolio:", error);
+  //   }
+  // }
   async function handleLogout() {
-    await disconnect();
-    setAddress("");
+    // const s = appkitModal?.getIsConnectedState();
+
+    await appkitModal?.adapter?.connectionControllerClient
+      ?.disconnect()
+      .then(() => setAddress(""));
+
     session && (await signOut());
     isLoggedIn && logOut();
   }
+
   return (
     <>
       <Box
@@ -160,9 +206,9 @@ export default function Header() {
               maxW={"100px"}
             />
           </Box>
-          <Button onClick={async () => await fetchWallets()}>
+          {/* <Button onClick={async () => await fetchWallets()}>
             create wallet
-          </Button>
+          </Button> */}
           <Box hideBelow={"md"}>
             <DarkMode>
               <Navbar />
@@ -178,7 +224,7 @@ export default function Header() {
                       gap={2}
                       variant={"outline"}
                       colorScheme="gray"
-                      onClick={() => handleLogout()}
+                      onClick={async () => await handleLogout()}
                     >
                       <Gradient3DBackground />
                       <Text>{shortenAddress(address || "")}</Text>

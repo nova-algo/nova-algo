@@ -2,10 +2,11 @@ import React, { createContext, ReactNode, useEffect, useState } from "react";
 import { useContext } from "react";
 import { OktoProvider, BuildType } from "okto-sdk-react";
 import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { AppKit, useAppKitAccount } from "@reown/appkit/react";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { NextAuthSession, USER_ACCOUNT_TYPE } from "@/types";
 import { useSession } from "next-auth/react";
+import { createWalletConnectModal } from "@/config/walletConnect";
 
 export const AppContext = createContext<{
   apiKey: string;
@@ -20,6 +21,7 @@ export const AppContext = createContext<{
   setBalanceSymbol: (balanceSymbol: string) => void;
   accountType: USER_ACCOUNT_TYPE;
   setAccountType: (type: USER_ACCOUNT_TYPE) => void;
+  appkitModal: AppKit | null;
 }>({
   apiKey: "",
   buildType: BuildType.SANDBOX,
@@ -33,6 +35,7 @@ export const AppContext = createContext<{
   setBalance: () => {},
   accountType: null,
   setAccountType: () => {},
+  appkitModal: null,
 });
 
 const oktoApiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY!;
@@ -47,6 +50,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [balance, setBalance] = useState("");
   const [balanceSymbol, setBalanceSymbol] = useState("SOL");
   const [accountType, setAccountType] = useState<USER_ACCOUNT_TYPE>(null);
+  const appkitModal = createWalletConnectModal();
   useEffect(() => {
     (async () => {
       if (reownAccount.isConnected) {
@@ -73,6 +77,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider
       value={{
+        appkitModal,
         idToken,
         setIdToken,
         apiKey,

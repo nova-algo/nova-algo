@@ -52,3 +52,16 @@ export async function mainHandler(
       return res.status(405).end();
   }
 }
+type QueryParams = Record<string, string | number | boolean | null | undefined>;
+
+export function objectToQueryParams(obj: QueryParams): string {
+  const params = new URLSearchParams();
+
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      params.append(key, value.toString());
+    }
+  });
+
+  return params.toString();
+}

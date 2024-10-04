@@ -1,4 +1,4 @@
-import React, { createElement, ReactNode } from "react";
+import React, { createElement, ReactNode, useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -32,18 +32,41 @@ import { IconType } from "react-icons";
 import VaultChart from "@/components/VaultChart";
 import { useAppContext, useNextAuthSession } from "@/context/app-context";
 import { Link } from "@chakra-ui/next-js";
+import { objectToQueryParams } from "@/utils";
 
 const UserDashboard = () => {
-  const { balance, balanceSymbol, accountType } = useAppContext();
+  const { balance, balanceSymbol, accountType, address } = useAppContext();
   const { data: session } = useNextAuthSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
+  const [queryParams, setQueryParams] = useState({
+    address,
+    widget_id: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_ID,
+    fiat_currency: "USD",
+    fiat_amount: 100,
+    network: "SOLANA",
+    currency: "USDT",
+  });
+
   async function handleMercuryo() {
-    window.open(
-      "https://sandbox-exchange.mrcr.io?address=0xA14691F9f1F851bd0c20115Ec10B25FC174371DF&widget_id=498a52be-6c66-415d-b9a6-44987d8dc031?signature=c20283cedb882fbfd27fc7ee0cfe6db930b732f669a3abee698967e3984ae7dfd24e058d7cecf37da0bb2fb133a24e47b4b3fc34578788ca07857f6ed1129284",
-      "_blank"
-    );
+    try {
+      const response = await fetch(
+        "/api/mercuryo/signature?" + objectToQueryParams({ address })
+      );
+      const result = await response.json();
+      const signature = result.data;
+      window.open(
+        "https://exchange.mercuryo.io/?" +
+          objectToQueryParams({ ...queryParams, signature }),
+        "popup"
+      );
+    } catch (error) {
+      console.log({ error }, "Error generating signature");
+    }
   }
+  useEffect(() => {
+    setQueryParams((prev) => ({ ...prev, address }));
+  }, [address]);
   return (
     <Flex>
       {!isMobile && (
