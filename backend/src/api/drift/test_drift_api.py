@@ -63,7 +63,7 @@ async def run_drift_api_initialize():
 
     try:
         # Run initialize method
-        await drift_api.initialize(subscription_type="cached")
+        await drift_api.initialize(subscription_type="polling")
         
         print("Initialization successful!")
         print(f"Public key: {drift_api.drift_client.wallet.payer.pubkey()}")
@@ -80,8 +80,8 @@ async def run_drift_api_initialize():
     #     if hasattr(drift_api, 'connection') and drift_api.connection:
     #         await drift_api.connection.close()
 
-if __name__ == "__main__":
-    asyncio.run(run_drift_api_initialize())
+# if __name__ == "__main__":
+#     asyncio.run(run_drift_api_initialize())
 
 async def test_place_order():
     load_dotenv()
@@ -239,8 +239,10 @@ async def test_drift_api_get_open_orders():
         print("tx_sig", result)
 
     if SHOW_THE_ORDERS:
-        print(drift_client.get_user_account(0).open_orders)
-        print(drift_client.get_user(0).get_open_orders())
+        user =  drift_client.get_user()
+        open_orders = await asyncio.to_thread(user.get_open_orders)
+        await asyncio.sleep(20)
+        logger.info(f"open orders: {open_orders}")
 
     if CANCEL_THE_ORDER:
         try:
@@ -248,16 +250,19 @@ async def test_drift_api_get_open_orders():
             logger.info(f"order id {ORDER_ID} cancelled successfully")
         except Exception as e:
             logger.error(f"Error cancelling order: {str(e)}")
-        raise e
+            raise e
     
     if GET_ORDER_INFO:
         try:
             drift_user = drift_client.get_user(0)
-            order_info = drift_user.get_order(ORDER_ID)
-            logger.info(f"order id {ORDER_ID} info: {order_info}")
+            drift_user_account = drift_client.get_user_account(0)
+            next_order_id = drift_user_account.next_order_id
+            order_info: Optional[Order] = drift_user.get_order(38)
+            logger.info(f"order id {38} info: {order_info}")
+            logger.info(f"next order id: {next_order_id}")
         except Exception as e:
             logger.error(f"Error getting order info: {str(e)}")
-        raise e
+            raise e
 
 
     # Ensure proper cleanup
@@ -265,5 +270,5 @@ async def test_drift_api_get_open_orders():
     await connection.close()
 
 
-# if __name__ == "__main__":
-#     asyncio.run(test_drift_api_get_open_orders())
+if __name__ == "__main__":
+    asyncio.run(test_drift_api_get_open_orders())
