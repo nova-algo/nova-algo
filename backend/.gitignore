@@ -1,2 +1,3 @@
 .env
 poetry.lock
+backend/src/**/__pycache__/

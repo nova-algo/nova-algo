@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import dataclass
-from driftpy.types import MarketType
+from driftpy.types import MarketType, PerpPosition, SpotPosition, PerpMarketAccount, SpotMarketAccount
 from driftpy.dlob.dlob_node import DLOBNode  
 from decimal import Decimal
 
 MakerNodeMap = dict[str, list[DLOBNode]]
+
+PositionType = Union[PerpPosition, SpotPosition]
+
+MarketAccountType = Union[PerpMarketAccount, SpotMarketAccount]
 
 
 class Bot(ABC):
