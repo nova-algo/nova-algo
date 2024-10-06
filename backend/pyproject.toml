@@ -20,6 +20,7 @@ python-dotenv = "^1.0.0"
 #drift-jit-proxy = "0.1.4"
 #asyncio = "^3.4.3"
 driftpy = "^0.7.83"
+Backtesting = "^0.3.3"
 
 
 [tool.poetry.dev-dependencies]
