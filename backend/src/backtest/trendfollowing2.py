@@ -45,6 +45,8 @@ class EnhancedALMAStrategy(Strategy):
         # This is just to shorten the code and make it readable
         buy_condition = crossover(self.data.Close, self.smoothed_alma + self.dynamic_threshold)
         sell_condition = crossover(self.smoothed_alma - self.dynamic_threshold, self.data.Close)
+        
+        position_size = self.position.size
 
         px_size = 0.75 # Never change it past 0.75 or you will go -ve
 
