@@ -20,7 +20,6 @@ import {
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
-import { signOut } from "next-auth/react";
 import { useEffect } from "react";
 import { useOkto, OktoContextType, WalletData } from "okto-sdk-react";
 import { ResponsiveModalSheet } from "./SheetOrModal";
@@ -31,16 +30,21 @@ import Navbar from "./Navbar";
 import { Link } from "@chakra-ui/next-js";
 import { useAppContext, useNextAuthSession } from "@/context/app-context";
 import { GoogleLogin } from "./GoogleLogin";
+import LogoutPopup from "./LogoutPopup";
 
 export default function Header() {
-  const { address, idToken, setAddress, appkitModal } = useAppContext();
+  const { address, idToken, setAddress } = useAppContext();
   const logo = useBreakpointValue({
     base: "/images/mobile-logo-white.png",
     md: "/images/desktop-logo-white.png",
   });
-  // const { disconnect } = useDisconnect();
   const bgColor = useColorModeValue("#1b1b1b", "gray.900");
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isLogoutOpen,
+    onOpen: onLogoutOpen,
+    onClose: onLogoutClose,
+  } = useDisclosure();
   const {
     isOpen: isNavbarOpen,
     onOpen: onNavbarOpen,
@@ -50,8 +54,6 @@ export default function Header() {
   const {
     isLoggedIn,
     authenticate,
-    logOut,
-    // showWidgetModal,
     // createWallet,
     // getPortfolio,
     // getSupportedTokens,
@@ -60,7 +62,6 @@ export default function Header() {
   } = useOkto() as OktoContextType;
 
   async function handleAuthenticate(): Promise<any> {
-    console.log({ idToken }, "start authenticate");
     if (!idToken) {
       return { result: false, error: "No google login" };
     }
@@ -90,9 +91,9 @@ export default function Header() {
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
+      // if (!response.ok) {
+      //   throw new Error(`Error: ${response.status}`);
+      // }
 
       const data = await response.json();
       console.log("Wallet created:", data);
@@ -131,55 +132,6 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idToken, isLoggedIn]);
 
-  // async function fetchWallets() {
-  //   try {
-  //     const createdWallet = await createWallet();
-
-  //     // await getSupportedNetworks();
-  //     console.log("Created wallet:", createdWallet);
-  //   } catch (error) {
-  //     console.error("Error creating wallet :", error);
-  //   }
-
-  //   try {
-  //     const supportedTokens = await getSupportedTokens();
-  //     console.log("Supported tokens:", supportedTokens);
-  //   } catch (error) {
-  //     console.error("Error fetching supported tokens:", error);
-  //   }
-
-  //   try {
-  //     const wallets = await getWallets();
-  //     console.log("Wallets:", wallets);
-  //   } catch (error) {
-  //     console.error("Error fetching wallets:", error);
-  //   }
-
-  //   try {
-  //     const userDetails = await getUserDetails();
-  //     console.log("User details:", userDetails);
-  //   } catch (error) {
-  //     console.error("Error fetching user details:", error);
-  //   }
-
-  //   try {
-  //     const portfolio = await getPortfolio();
-  //     console.log("Portfolio:", portfolio);
-  //   } catch (error) {
-  //     console.error("Error fetching portfolio:", error);
-  //   }
-  // }
-  async function handleLogout() {
-    // const s = appkitModal?.getIsConnectedState();
-
-    await appkitModal?.adapter?.connectionControllerClient
-      ?.disconnect()
-      .then(() => setAddress(""));
-
-    session && (await signOut());
-    isLoggedIn && logOut();
-  }
-
   return (
     <>
       <Box
@@ -207,9 +159,7 @@ export default function Header() {
               maxW={"100px"}
             />
           </Box>
-          {/* <Button onClick={async () => await fetchWallets()}>
-            create wallet
-          </Button> */}
+
           <Box hideBelow={"md"}>
             <DarkMode>
               <Navbar />
@@ -225,7 +175,7 @@ export default function Header() {
                       gap={2}
                       variant={"outline"}
                       colorScheme="gray"
-                      onClick={async () => await handleLogout()}
+                      onClick={() => onLogoutOpen()}
                     >
                       <Gradient3DBackground />
                       <Text>{shortenAddress(address || "")}</Text>
@@ -289,6 +239,7 @@ export default function Header() {
           </Box>
         </DrawerContent>
       </Drawer>
+      <LogoutPopup onClose={onLogoutClose} isOpen={isLogoutOpen} />
     </>
   );
 }

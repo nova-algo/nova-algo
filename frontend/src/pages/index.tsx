@@ -9,7 +9,7 @@ export default function Home() {
   useEffect(() => {
     const tid = setTimeout(() => {
       setIsReady(true);
-    }, 2500);
+    }, 800);
     return () => {
       tid && clearTimeout(tid);
     };

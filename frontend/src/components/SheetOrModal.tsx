@@ -39,12 +39,17 @@ export const ResponsiveModalSheet: React.FC<ResponsiveModalSheetProps> = ({
     setIsModal(variant === "Modal");
   }, [variant]);
 
-  const renderContent = () => (
-    <VStack align="stretch" spacing={4} p={4}>
-      <Heading size="md">{title}</Heading>
-      {content}
-    </VStack>
-  );
+  const renderContent = () =>
+    isModal ? (
+      <VStack align="stretch" spacing={4} p={4}>
+        {content}
+      </VStack>
+    ) : (
+      <VStack align="stretch" spacing={4} p={4}>
+        <Heading size="md">{title}</Heading>
+        {content}
+      </VStack>
+    );
 
   return (
     <>
@@ -57,6 +62,8 @@ export const ResponsiveModalSheet: React.FC<ResponsiveModalSheetProps> = ({
         <ModalOverlay />
         <ModalContent borderRadius="36px" boxShadow="lg">
           <ModalHeader>
+            <Heading size="md">{title}</Heading>
+
             <ModalCloseButton />
           </ModalHeader>
 

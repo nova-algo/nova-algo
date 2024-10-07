@@ -8,7 +8,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { NextAuthSession, USER_ACCOUNT_TYPE } from "@/types";
 import { useSession } from "next-auth/react";
 import { createWalletConnectModal } from "@/config/walletConnect";
-import { useRouter } from "next/router";
+
 const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 export const AppContext = createContext<{
   apiKey: string;
@@ -88,7 +88,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           {
             headers: {
               "x-api-key": oktoApiKey,
-              Authorization: `Bearer ${authDetails.authToken}`,
+              Authorization: `Bearer ${authDetails?.authToken}`,
             },
           }
         ).then(async (res) => {
@@ -127,13 +127,13 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       }
     })();
   }, [address, accountType]);
-  const router = useRouter();
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  // const router = useRouter();
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     router.push("/dashboard");
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isAuthenticated]);
   return (
     <AppContext.Provider
       value={{
