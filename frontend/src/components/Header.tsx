@@ -104,31 +104,32 @@ export default function Header() {
   };
   useEffect(() => {
     let authToken = "";
-    (async () => {
-      if (idToken && !isLoggedIn) {
-        handleAuthenticate().then(async () => {
-          if (typeof window !== "undefined") {
-            const authDetails = JSON.parse(
-              localStorage.getItem("AUTH_DETAILS") || "{}"
-            );
-            authToken = authDetails.authToken;
-          }
-          const { wallets } = await createWallet(authToken);
-          console.log({ wallets });
+    // (async () => {
+    if (idToken && !isLoggedIn) {
+      handleAuthenticate().then(async () => {
+        if (typeof window !== "undefined") {
+          const authDetails = JSON.parse(
+            localStorage.getItem("AUTH_DETAILS") || "{}"
+          );
+          authToken = authDetails?.authToken;
+        }
+        const { wallets } = await createWallet(authToken);
+        console.log({ wallets });
 
-          if (wallets.length > 0) {
-            const solWallet = wallets.find(
-              (wallet) => wallet.network_name.toLowerCase() === "solana"
-            );
-            setAddress(solWallet?.address as string);
-          }
-        });
+        if (wallets.length > 0) {
+          const solWallet = wallets.find(
+            (wallet) => wallet.network_name.toLowerCase() === "solana_devnet"
+          );
 
-        // fetchWallets();
-      }
-    })();
+          setAddress(solWallet?.address as string);
+        }
+      });
+
+      // fetchWallets();
+    }
+    // })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idToken]);
+  }, [idToken, isLoggedIn]);
 
   // async function fetchWallets() {
   //   try {

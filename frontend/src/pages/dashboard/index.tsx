@@ -1,4 +1,4 @@
-import React, { createElement, ReactNode, useEffect, useState } from "react";
+import React, { createElement, MouseEvent, ReactNode, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -17,6 +17,22 @@ import {
   useDisclosure,
   useBreakpointValue,
   Image,
+  ModalHeader,
+  ModalContent,
+  ModalOverlay,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Stack,
+  FormErrorMessage,
+  NumberInput,
+  NumberInputField,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 import {
   LuWallet,
@@ -27,46 +43,108 @@ import {
   LuSettings,
   LuMenu,
   LuPlus,
+  LuChevronDown,
+  LuDownload,
 } from "react-icons/lu";
 import { IconType } from "react-icons";
 import VaultChart from "@/components/VaultChart";
 import { useAppContext, useNextAuthSession } from "@/context/app-context";
 import { Link } from "@chakra-ui/next-js";
 import { objectToQueryParams } from "@/utils";
+import { useFormik } from "formik";
+import { object, string } from "yup";
 
+type FormFields = {
+  address: string;
+  widget_id?: string;
+  fiat_currency: string;
+  fiat_amount: number;
+  network: string;
+  currency: string;
+};
 const UserDashboard = () => {
   const { balance, balanceSymbol, accountType, address } = useAppContext();
   const { data: session } = useNextAuthSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const isMobile = useBreakpointValue({ base: true, md: false });
-  const [queryParams, setQueryParams] = useState({
-    address,
-    widget_id: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_ID,
-    fiat_currency: "USD",
-    fiat_amount: 100,
-    network: "SOLANA",
-    currency: "USDT",
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure();
+  const formik = useFormik({
+    validationSchema: object({
+      fiat_amount: string().required("Amount is required"),
+    }),
+    initialValues: {
+      address,
+      widget_id: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_ID,
+      fiat_currency: "USD",
+      fiat_amount: 100,
+      network: "SOLANA",
+      currency: "SOL",
+    },
+    onSubmit: async (values) => {
+      await handleMercuryo(values);
+    },
   });
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
-  async function handleMercuryo() {
+  async function fetchSignature(address: string) {
+    const response = await fetch(
+      "/api/mercuryo/signature?" + objectToQueryParams({ address })
+    );
+    const result = await response.json();
+    const signature = result.data;
+    return signature;
+  }
+  async function handleMercuryo(
+    values: FormFields,
+    type: "deposit" | "withdraw" = "deposit"
+  ) {
     try {
-      const response = await fetch(
-        "/api/mercuryo/signature?" + objectToQueryParams({ address })
-      );
-      const result = await response.json();
-      const signature = result.data;
+      const signature = await fetchSignature(values.address);
+
+      if (type === "withdraw") {
+        window.open(
+          "https://exchange.mercuryo.io/?" +
+            objectToQueryParams({
+              currency: "SOL",
+              address,
+              fiat_currency: "USD",
+              amount: balance,
+              type: "sell",
+              signature,
+            }),
+          "popup"
+        );
+        return;
+      }
+
       window.open(
         "https://exchange.mercuryo.io/?" +
-          objectToQueryParams({ ...queryParams, signature }),
+          objectToQueryParams({ ...values, signature, type: "buy" }),
         "popup"
       );
+      onModalClose();
     } catch (error) {
       console.log({ error }, "Error generating signature");
     }
   }
+  async function handleWithdraw() {
+    handleMercuryo(formik.values, "withdraw");
+  }
   useEffect(() => {
-    setQueryParams((prev) => ({ ...prev, address }));
+    formik.setFieldValue("address", address);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
+  function handleTokenSelect(e: MouseEvent<HTMLDivElement>) {
+    const target = e.target as HTMLButtonElement;
+    formik.setFieldValue("currency", target.value);
+  }
+  function handleCurrencySelect(e: MouseEvent<HTMLDivElement>) {
+    const target = e.target as HTMLButtonElement;
+    formik.setFieldValue("fiat_currency", target.value);
+  }
   return (
     <Flex>
       {!isMobile && (
@@ -118,7 +196,7 @@ const UserDashboard = () => {
               <Text color="gray.600">Wallet balance:</Text>
               <Text as="span">{balanceSymbol}:</Text>{" "}
               <Text fontWeight={600} as="span">
-                {(+balance).toFixed(4)}
+                {balance.substring(0, 7)}
               </Text>
             </Box>
           </HStack>
@@ -130,22 +208,28 @@ const UserDashboard = () => {
             gap={6}
             mb={8}
           >
-            <StatCard icon={LuWallet} title="Total Balance" value="$10,245.67">
-              <HStack mt={4}>
-                <Button
-                  onClick={handleMercuryo}
-                  size={"sm"}
-                  leftIcon={<LuPlus />}
-                >
+            <StatCard
+              icon={LuWallet}
+              title="Total Balance"
+              value={"SOL: " + balance.substring(0, 7)}
+            >
+              <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
+                <Button onClick={onModalOpen} size={"sm"} leftIcon={<LuPlus />}>
                   Fund wallet
                 </Button>
               </HStack>
             </StatCard>
-            <StatCard
-              icon={LuTrendingUp}
-              title="Total Profit"
-              value="$1,234.56"
-            />
+            <StatCard icon={LuTrendingUp} title="Total Profit" value="$34.56">
+              <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
+                <Button
+                  onClick={handleWithdraw}
+                  size={"sm"}
+                  leftIcon={<LuDownload />}
+                >
+                  Withdraw
+                </Button>
+              </HStack>
+            </StatCard>
             <StatCard icon={LuPieChart} title="Active Vaults" value="3" />
           </Grid>
           <Box mb={8}>
@@ -208,6 +292,107 @@ const UserDashboard = () => {
           </Grid>
         </Box>
       </Box>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={onModalClose}
+        size={{ base: "full", sm: "md" }}
+        motionPreset={"slideInBottom"}
+      >
+        <ModalOverlay />
+        <ModalContent rounded={"24px"}>
+          <ModalHeader>Fund Wallet</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Stack
+              as={"form"}
+              spacing={4}
+              // @ts-expect-error works fine
+              onSubmit={formik.handleSubmit}
+            >
+              <FormControl
+                isInvalid={
+                  !!formik.errors.fiat_amount && formik.touched.fiat_amount
+                }
+              >
+                <FormLabel htmlFor="fiat_amount">Amount:</FormLabel>
+                <NumberInput
+                  isRequired
+                  id="fiat_amount"
+                  name="fiat_amount"
+                  min={1}
+                  value={formik.values.fiat_amount}
+                >
+                  <NumberInputField
+                    onChange={formik.handleChange}
+                    rounded={"full"}
+                    placeholder="Enter amount"
+                  />
+                  {formik.errors.fiat_amount && (
+                    <FormErrorMessage>
+                      {formik.errors.fiat_amount}
+                    </FormErrorMessage>
+                  )}
+                </NumberInput>
+              </FormControl>
+              <FormControl>
+                <FormLabel htmlFor="currency">Currency:</FormLabel>
+                <Menu>
+                  <MenuButton
+                    variant={"outline"}
+                    id="currency"
+                    as={Button}
+                    rightIcon={<LuChevronDown />}
+                  >
+                    {formik.values.fiat_currency}
+                  </MenuButton>
+                  <MenuList onClick={handleCurrencySelect}>
+                    <MenuItem value="USD">USD</MenuItem>
+                    <MenuItem value="EUR">EUR</MenuItem>
+                  </MenuList>
+                </Menu>
+              </FormControl>
+              <FormControl>
+                <FormLabel htmlFor="token">Token:</FormLabel>
+                <Menu>
+                  <MenuButton
+                    variant={"outline"}
+                    id="token"
+                    as={Button}
+                    rightIcon={<LuChevronDown />}
+                  >
+                    {formik.values.currency}
+                  </MenuButton>
+                  <MenuList onClick={handleTokenSelect}>
+                    <MenuItem value="USDT">USDT</MenuItem>
+                    <MenuItem value="USDC">USDC</MenuItem>
+                    <MenuItem value="SOL">SOL</MenuItem>
+                  </MenuList>
+                </Menu>
+              </FormControl>
+              <Stack>
+                <Button
+                  isLoading={formik.isSubmitting}
+                  loadingText="Redirecting you..."
+                  type="submit"
+                  colorScheme="blue"
+                >
+                  Fund Wallet
+                </Button>
+                <Text
+                  color={"gray.500"}
+                  fontSize={"x-small"}
+                  textAlign={"center"}
+                >
+                  You will be redirected to Mercuryo to complete the
+                  transaction.
+                </Text>
+              </Stack>
+            </Stack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
         <DrawerContent>
@@ -221,7 +406,6 @@ const UserDashboard = () => {
     </Flex>
   );
 };
-
 const Sidebar = () => (
   <VStack spacing={4} align="stretch">
     <SidebarItem icon={LuHome} label="Dashboard" />
