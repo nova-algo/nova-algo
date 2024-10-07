@@ -327,27 +327,57 @@ class DriftAPI:
             logger.error(f"Error retrieving user information: {str(e)}")
             raise  # This re-raises the caught exception
 
-    async def get_open_orders(self, subaccount_id: Optional[int] = None) -> list[Order]:
+    # async def get_open_orders(self, subaccount_id: Optional[int] = None) -> list[Order]:
+    #     """
+    #     Retrieves the list of user's open orders.
+
+    #     This method fetches the open orders from the Drift client and returns them as a list.
+        
+    #     Returns:
+    #         list: A list of open orders.
+    #     """
+    #     #self.drift_client.add_user(subaccount_id)
+    #     try:
+    #         user = self.drift_client.get_user(subaccount_id)
+    #         #open_orders = user.get_open_orders()
+    #         open_orders = await asyncio.to_thread(user.get_open_orders)
+    #         logger.info(f"Retrieved {len(open_orders)} open orders.")
+    #         return open_orders
+    #     except Exception as e:
+    #         logger.error(f"Error retrieving open orders: {str(e)}")
+    #         logger.warning("Returning an empty list of orders due to the error.")
+    #         return []
+    
+    def get_open_orders(self, subaccount_id: Optional[int] = None) -> List[Order]:
         """
         Retrieves the list of user's open orders.
 
         This method fetches the open orders from the Drift client and returns them as a list.
         
         Returns:
-            list: A list of open orders.
+            List[Order]: A list of open orders.
         """
-        #self.drift_client.add_user(subaccount_id)
         try:
+            logger.info(f"Attempting to get user for subaccount_id: {subaccount_id}")
             user = self.drift_client.get_user(subaccount_id)
-            #open_orders = user.get_open_orders()
-            open_orders = await asyncio.to_thread(user.get_open_orders)
-            logger.info(f"Retrieved {len(open_orders)} open orders.")
+            logger.info(f"Successfully retrieved user for subaccount_id: {subaccount_id}")
+
+            logger.info("Fetching open orders...")
+            #open_orders = await asyncio.to_thread(user.get_open_orders)
+            open_orders = user.get_open_orders()
+
+            if open_orders:
+                logger.info(f"Retrieved {len(open_orders)} open orders.")
+                for order in open_orders:
+                    logger.info(f"Order details: {order}")
+            else:
+                logger.warning("No open orders found.")
             return open_orders
         except Exception as e:
-            logger.error(f"Error retrieving open orders: {str(e)}")
+            logger.error(f"Error retrieving open orders: {str(e)}", exc_info=True)
             logger.warning("Returning an empty list of orders due to the error.")
             return []
-    
+
     def get_market_index_and_type(self, name: str) -> Tuple[int, MarketType]:
         """
         Retrieves market index and type for a given market name.

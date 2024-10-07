@@ -129,7 +129,7 @@ async def test_get_open_orders():
     drift_api = DriftAPI("devnet")
 
     try:
-        await drift_api.initialize(subscription_type="cached")
+        await drift_api.initialize(subscription_type="polling")
         
         order_params = OrderParams(
             market_type=MarketType.Perp(),
@@ -141,16 +141,18 @@ async def test_get_open_orders():
             post_only=PostOnlyParams.TryPostOnly(),
         )
 
-        await drift_api.place_order(order_params)
+        #await drift_api.place_order(order_params)
     except Exception as e:
         print(f"An error occurred: {str(e)}")
-    await asyncio.sleep(5)  # Wait for 5 seconds
+    #await asyncio.sleep(5)  # Wait for 5 seconds
     try:
         #await drift_api.initialize(subscription_type="cached")
         
         #await drift_api.drift_client.get_user().subscribe()
-        next_order_id = drift_api.drift_client.get_user_account(0).next_order_id
-        print(f"open_orders: {next_order_id}")
+        open_orders = drift_api.get_open_orders()
+        await asyncio.sleep(20)  # Wait for 5 seconds
+        # print(f"open_orders: {open_orders}")
+
         
         # print(f"Number of open orders: {len(open_orders)}")
         # for order in open_orders:
@@ -171,7 +173,7 @@ async def test_get_open_orders():
 #     asyncio.run(test_get_open_orders())
 
 # the imports... 
-async def test_drift_api_get_open_orders():
+async def test_drift_api():
     load_dotenv()
     keypath = os.getenv("DRIFT_WALLET_PRIVATE_KEY")
     url = os.getenv("RPC_URL")
@@ -201,15 +203,15 @@ async def test_drift_api_get_open_orders():
         wallet,
         "devnet", # using devnet 
         tx_params=TxParams(600_000, 100),
-        account_subscription=AccountSubscriptionConfig("cached", bulk_account_loader=bulk_account_loader)
+        account_subscription=AccountSubscriptionConfig("polling", bulk_account_loader=bulk_account_loader)
     )
 
-    # try:
-    #     await drift_client.add_user(0)
-    #     logger.info("Sub account 0 successfully added")
-    # except Exception as e:
-    #     logger.error(f"Error subscribing to Drift client: {str(e)}")
-    #     raise e
+    try:
+        await drift_client.add_user(0)
+        logger.info("Sub account 0 successfully added")
+    except Exception as e:
+        logger.error(f"Error subscribing to Drift client: {str(e)}")
+        raise e
     try:
         await drift_client.subscribe()
         logger.info("Drift client subscribed successfully")
@@ -218,11 +220,11 @@ async def test_drift_api_get_open_orders():
         raise e
 
     MAKE_THE_ORDER = False # Change to true to make an order as well
-    SHOW_THE_ORDERS = False
+    SHOW_THE_ORDERS = True
     CANCEL_THE_ORDER = False
     ORDER_ID = 34
     GET_POSITION = False
-    GET_ORDER_INFO = True
+    GET_ORDER_INFO = False
 
 
     if MAKE_THE_ORDER:
@@ -240,10 +242,12 @@ async def test_drift_api_get_open_orders():
 
     if SHOW_THE_ORDERS:
         user =  drift_client.get_user()
-        open_orders = await asyncio.to_thread(user.get_open_orders)
-        await asyncio.sleep(20)
+        open_positions = user.get_user_position(0)
+        open_orders = user.get_open_orders()
+        #print(drift_client.get_user_account(0).next_order_id)
+        await asyncio.sleep(60)
+        logger.info(f"open positions: {open_positions}")
         logger.info(f"open orders: {open_orders}")
-
     if CANCEL_THE_ORDER:
         try:
             await drift_client.cancel_order(ORDER_ID)
@@ -258,6 +262,7 @@ async def test_drift_api_get_open_orders():
             drift_user_account = drift_client.get_user_account(0)
             next_order_id = drift_user_account.next_order_id
             order_info: Optional[Order] = drift_user.get_order(38)
+            await asyncio.sleep(20)
             logger.info(f"order id {38} info: {order_info}")
             logger.info(f"next order id: {next_order_id}")
         except Exception as e:
@@ -271,4 +276,4 @@ async def test_drift_api_get_open_orders():
 
 
 if __name__ == "__main__":
-    asyncio.run(test_drift_api_get_open_orders())
+    asyncio.run(test_drift_api())
