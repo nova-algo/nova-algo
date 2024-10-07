@@ -47,7 +47,7 @@ export const AppContext = createContext<{
 const oktoApiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY!;
 export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const reownAccount = useAppKitAccount();
-  const { data: session } = useNextAuthSession();
+  const { data: session ,status} = useNextAuthSession();
   const { connection: reownConnection } = useAppKitConnection();
   const [idToken, setIdToken] = useState("");
   const [apiKey] = useState(oktoApiKey);
@@ -61,7 +61,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       if (reownAccount.isConnected) {
-        setIsAuthenticated(true);
+      
         const publicKey = new PublicKey(reownAccount.address as string);
         setAccountType("WALLET");
         try {
@@ -111,7 +111,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       if (address && accountType == "GOOGLE") {
-        setIsAuthenticated(true);
+     
         const publicKey = new PublicKey(address as string);
 
         try {
@@ -122,18 +122,16 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {}
         // setBalanceSymbol(reownConnection.get);
         // setAddress(reownAccount.address!);
-      } else {
-        setIsAuthenticated(false);
-      }
+      } 
     })();
   }, [address, accountType]);
   // const router = useRouter();
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     router.push("/dashboard");
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [isAuthenticated]);
+  useEffect(() => {
+    setIsAuthenticated((accountType == null &&
+      status !== "loading" &&
+      status == "unauthenticated") ||
+      !address);
+  }, []);
   return (
     <AppContext.Provider
       value={{

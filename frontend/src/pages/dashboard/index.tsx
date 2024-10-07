@@ -1,4 +1,10 @@
-import React, { createElement, MouseEvent, ReactNode, useEffect } from "react";
+import React, {
+  createElement,
+  MouseEvent,
+  ReactNode,
+  useEffect,
+  useState,
+} from "react";
 import {
   Box,
   Grid,
@@ -33,6 +39,7 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   LuWallet,
@@ -53,6 +60,7 @@ import { Link } from "@chakra-ui/next-js";
 import { objectToQueryParams } from "@/utils";
 import { useFormik } from "formik";
 import { object, string } from "yup";
+import { useRouter } from "next/router";
 
 type FormFields = {
   address: string;
@@ -63,9 +71,12 @@ type FormFields = {
   currency: string;
 };
 const UserDashboard = () => {
-  const { balance, balanceSymbol, accountType, address } = useAppContext();
+  const { balance, balanceSymbol, accountType, address, isAuthenticated } =
+    useAppContext();
+  const [canLoad, setCanLoad] = useState(false);
   const { data: session } = useNextAuthSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const router = useRouter();
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
@@ -145,6 +156,19 @@ const UserDashboard = () => {
     const target = e.target as HTMLButtonElement;
     formik.setFieldValue("fiat_currency", target.value);
   }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/");
+    } else {
+      setCanLoad(true);
+    }
+  }, []);
+  if (!canLoad)
+    return (
+      <>
+        <Spinner />
+      </>
+    );
   return (
     <Flex>
       {!isMobile && (
