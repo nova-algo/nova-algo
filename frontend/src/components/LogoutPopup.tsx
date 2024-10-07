@@ -13,18 +13,20 @@ export default function LogoutPopup({
   onClose: () => void;
 }) {
   const { appkitModal } = useAppContext();
-  const { setAddress } = useAppContext();
+  const { setAddress, setIsAuthenticated, setAccountType } = useAppContext();
   const { data: session } = useSession();
   const { isLoggedIn, logOut } = useOkto() as OktoContextType;
 
   async function handleLogout() {
-    onClose();
     await appkitModal?.adapter?.connectionControllerClient
       ?.disconnect()
       .then(() => setAddress(""));
 
     session && (await signOut());
     isLoggedIn && logOut();
+    setIsAuthenticated(false);
+    setAccountType(null);
+    onClose();
   }
   return (
     <>

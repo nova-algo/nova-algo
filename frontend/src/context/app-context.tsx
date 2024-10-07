@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useEffect, useState } from "react";
 import { useContext } from "react";
-import { OktoProvider, BuildType, WalletData } from "okto-sdk-react";
+import { OktoProvider, BuildType } from "okto-sdk-react";
 import { Connection, clusterApiUrl } from "@solana/web3.js";
 import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
 import { AppKit, useAppKitAccount } from "@reown/appkit/react";
@@ -47,7 +47,7 @@ export const AppContext = createContext<{
 const oktoApiKey = process.env.NEXT_PUBLIC_OKTO_API_KEY!;
 export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const reownAccount = useAppKitAccount();
-  const { data: session ,status} = useNextAuthSession();
+  const { status } = useNextAuthSession();
   const { connection: reownConnection } = useAppKitConnection();
   const [idToken, setIdToken] = useState("");
   const [apiKey] = useState(oktoApiKey);
@@ -61,7 +61,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       if (reownAccount.isConnected) {
-      
         const publicKey = new PublicKey(reownAccount.address as string);
         setAccountType("WALLET");
         try {
@@ -70,48 +69,15 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           setBalance(bal);
         } catch (error) {}
         // setBalanceSymbol(reownConnection.get);
-        setAddress(reownAccount.address!);
+        setAddress(reownAccount.address || "");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reownAccount]);
-  useEffect(() => {
-    const authDetails = JSON.parse(
-      localStorage.getItem("AUTH_DETAILS") || "{}"
-    );
-    (async () => {
-      if (session) {
-        setAccountType("GOOGLE");
-        setIdToken(session?.id_token as string);
-        const { wallets } = await fetch(
-          "https://sandbox-api.okto.tech/api/v1/wallet",
-          {
-            headers: {
-              "x-api-key": oktoApiKey,
-              Authorization: `Bearer ${authDetails?.authToken}`,
-            },
-          }
-        ).then(async (res) => {
-          const result = await res.json();
-          return result.data as WalletData;
-        });
-        const solWallet = wallets.find(
-          (w) =>
-            w.network_name.toLowerCase() === "solana" ||
-            w.network_name.toLowerCase() === "solana_devnet"
-        );
-        if (solWallet) {
-          setAddress(solWallet.address);
-        } else {
-          setAddress("");
-        }
-      }
-    })();
-  }, [session]);
+
   useEffect(() => {
     (async () => {
       if (address && accountType == "GOOGLE") {
-     
         const publicKey = new PublicKey(address as string);
 
         try {
@@ -122,16 +88,24 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {}
         // setBalanceSymbol(reownConnection.get);
         // setAddress(reownAccount.address!);
-      } 
+      }
     })();
   }, [address, accountType]);
-  // const router = useRouter();
   useEffect(() => {
-    setIsAuthenticated((accountType == null &&
-      status !== "loading" &&
-      status == "unauthenticated") ||
-      !address);
-  }, []);
+    console.log({
+      address,
+      isAuth:
+        accountType !== null ||
+        (status !== "loading" && status !== "unauthenticated") ||
+        address.trim() !== "",
+    });
+
+    setIsAuthenticated(
+      accountType !== null ||
+        (status !== "loading" && status !== "unauthenticated") ||
+        address.trim() !== ""
+    );
+  }, [accountType, address, status]);
   return (
     <AppContext.Provider
       value={{

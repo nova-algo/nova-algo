@@ -13,11 +13,12 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { FaGoogle } from "react-icons/fa";
 import { LuArrowRight } from "react-icons/lu";
 import { ResponsiveModalSheet } from "../SheetOrModal";
-import { useGoogleLogin } from "@/hooks";
 import { Link } from "@chakra-ui/next-js";
+import { useAppContext } from "@/context/app-context";
+import { GoogleLogin } from "../GoogleLogin";
+import { useRouter } from "next/router";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MotionBox = motion.create(Box as any);
@@ -25,8 +26,17 @@ const MotionBox = motion.create(Box as any);
 // const MotionButton = motion.create(Button as any);
 const Hero = () => {
   const textColor = useColorModeValue("gray.800", "gray.100");
-  const { handleLogin } = useGoogleLogin();
+
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isAuthenticated } = useAppContext();
+  const router = useRouter();
+  function handleAutomateButtonClick() {
+    if (!isAuthenticated) {
+      onOpen();
+      return;
+    }
+    router.push("/vaults");
+  }
   return (
     <>
       <Box pos={"relative"}>
@@ -83,7 +93,9 @@ const Hero = () => {
                   size={"lg"}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={onOpen}
+                  onClick={() => {
+                    handleAutomateButtonClick();
+                  }}
                   pl={8}
                   pr={3}
                   gap={2}
@@ -132,32 +144,28 @@ const Hero = () => {
           />
         </Box>
       </Box>
-      <ResponsiveModalSheet
-        title=""
-        isOpen={isOpen}
-        onClose={onClose}
-        content={
-          <>
-            <VStack>
-              <w3m-button />
+      {!isAuthenticated && (
+        <ResponsiveModalSheet
+          title=""
+          isOpen={isOpen}
+          onClose={onClose}
+          content={
+            <>
+              <VStack>
+                <w3m-button disabled={isAuthenticated} />
 
-              <Box position="relative" padding="4">
-                <Divider />
-                <AbsoluteCenter bg="white" px="4">
-                  or
-                </AbsoluteCenter>
-              </Box>
-              <Button
-                variant={"outline"}
-                leftIcon={<FaGoogle />}
-                onClick={() => handleLogin()}
-              >
-                Continue with Google
-              </Button>
-            </VStack>
-          </>
-        }
-      />
+                <Box position="relative" padding="4">
+                  <Divider />
+                  <AbsoluteCenter bg="white" px="4">
+                    or
+                  </AbsoluteCenter>
+                </Box>
+                <GoogleLogin />
+              </VStack>
+            </>
+          }
+        />
+      )}
     </>
   );
 };

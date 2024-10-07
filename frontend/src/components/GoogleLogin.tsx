@@ -1,3 +1,4 @@
+import { useAppContext } from "@/context/app-context";
 import { useGoogleLogin } from "@/hooks";
 import { Button } from "@chakra-ui/react";
 
@@ -28,12 +29,14 @@ const GoogleLogo = () => (
 );
 export const GoogleLogin = () => {
   const { handleLogin, isLoading } = useGoogleLogin();
+  const { isAuthenticated } = useAppContext();
   return (
     <Button
       leftIcon={<GoogleLogo />}
       isLoading={isLoading}
       onClick={handleLogin}
       variant={"outline"}
+      disabled={isAuthenticated}
     >
       Continue with Google
     </Button>
