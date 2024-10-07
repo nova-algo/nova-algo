@@ -12,6 +12,7 @@ from solders.keypair import Keypair # type: ignore
 from solders.pubkey import Pubkey # type: ignore
 from solana.rpc.async_api import AsyncClient
 from driftpy.math.amm import calculate_bid_ask_price
+from driftpy.math.conversion import convert_to_number
 from driftpy.math.market import (calculate_bid_price, calculate_ask_price)
 from driftpy.types import (
     MarketType,
@@ -220,11 +221,12 @@ async def test_drift_api():
         raise e
 
     MAKE_THE_ORDER = False # Change to true to make an order as well
-    SHOW_THE_ORDERS = True
+    SHOW_THE_ORDERS = False
     CANCEL_THE_ORDER = False
     ORDER_ID = 34
     GET_POSITION = False
     GET_ORDER_INFO = False
+    GET_MARKET_PRICE = True
 
 
     if MAKE_THE_ORDER:
@@ -260,15 +262,21 @@ async def test_drift_api():
         try:
             drift_user = drift_client.get_user(0)
             drift_user_account = drift_client.get_user_account(0)
+            #orders = drift_user_account.orders
             next_order_id = drift_user_account.next_order_id
             order_info: Optional[Order] = drift_user.get_order(38)
-            await asyncio.sleep(20)
+            await asyncio.sleep(60)
             logger.info(f"order id {38} info: {order_info}")
             logger.info(f"next order id: {next_order_id}")
+            #logger.info(f"orders from user account: {orders}")
         except Exception as e:
             logger.error(f"Error getting order info: {str(e)}")
             raise e
 
+    if GET_MARKET_PRICE:
+        market_price_data = drift_client.get_oracle_price_data_for_perp_market(0)
+        logger.info(f"market price data: {market_price_data}")
+        logger.info(f"market price: {convert_to_number(market_price_data.price)}")
 
     # Ensure proper cleanup
     await drift_client.unsubscribe()
