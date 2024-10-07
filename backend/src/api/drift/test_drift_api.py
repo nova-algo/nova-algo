@@ -173,7 +173,6 @@ async def test_get_open_orders():
 # if __name__ == "__main__":
 #     asyncio.run(test_get_open_orders())
 
-# the imports... 
 async def test_drift_api():
     load_dotenv()
     keypath = os.getenv("DRIFT_WALLET_PRIVATE_KEY")
@@ -195,7 +194,7 @@ async def test_drift_api():
     keypair = Keypair.from_bytes(bytes(secret))
     wallet = Wallet(keypair)
 
-    logger.info(f"Using public key: {keypair.pubkey()}")
+    #logger.info(f"Using public key: {keypair.pubkey()}")
     connection = AsyncClient(url)
     bulk_account_loader = BulkAccountLoader(connection)
 
@@ -204,7 +203,7 @@ async def test_drift_api():
         wallet,
         "devnet", # using devnet 
         tx_params=TxParams(600_000, 100),
-        account_subscription=AccountSubscriptionConfig("polling", bulk_account_loader=bulk_account_loader)
+        account_subscription=AccountSubscriptionConfig("cached", bulk_account_loader=bulk_account_loader)
     )
 
     try:
@@ -220,36 +219,47 @@ async def test_drift_api():
         logger.error(f"Error subscribing to Drift client: {str(e)}")
         raise e
 
-    MAKE_THE_ORDER = False # Change to true to make an order as well
-    SHOW_THE_ORDERS = False
+    MAKE_THE_ORDER = True # Change to true to make an order as well
+    SHOW_THE_ORDERS = True
     CANCEL_THE_ORDER = False
     ORDER_ID = 34
     GET_POSITION = False
     GET_ORDER_INFO = False
-    GET_MARKET_PRICE = True
-
+    GET_MARKET_PRICE = False
 
     if MAKE_THE_ORDER:
+        # market_index = 0
+        # order_params = OrderParams(
+        #     order_type=OrderType.Limit(),
+        #     base_asset_amount=drift_client.convert_to_perp_precision(0.01),
+        #     market_index=market_index,
+        #     direction=PositionDirection.Long(),
+        #     price=drift_client.convert_to_price_precision(30000),
+        #     post_only=PostOnlyParams.TryPostOnly(),
+        # )
+        # result = await drift_client.place_perp_order(order_params)
         market_index = 0
         order_params = OrderParams(
             order_type=OrderType.Limit(),
             base_asset_amount=drift_client.convert_to_perp_precision(0.01),
-            market_index=market_index,
+            market_index=0,
             direction=PositionDirection.Long(),
-            price=drift_client.convert_to_price_precision(30000),
-            post_only=PostOnlyParams.TryPostOnly(),
+            price=drift_client.convert_to_price_precision(100), # <--- here
+            post_only=PostOnlyParams.MustPostOnly(),
         )
+
         result = await drift_client.place_perp_order(order_params)
         print("tx_sig", result)
 
     if SHOW_THE_ORDERS:
         user =  drift_client.get_user()
-        open_positions = user.get_user_position(0)
+        #open_positions = user.get_user_position(0)
         open_orders = user.get_open_orders()
-        #print(drift_client.get_user_account(0).next_order_id)
         await asyncio.sleep(60)
-        logger.info(f"open positions: {open_positions}")
+        #logger.info(f"open positions: {open_positions}")
+        logger.info(f"next order id: {drift_client.get_user_account(0).next_order_id}")
         logger.info(f"open orders: {open_orders}")
+
     if CANCEL_THE_ORDER:
         try:
             await drift_client.cancel_order(ORDER_ID)
