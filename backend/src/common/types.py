@@ -1,10 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import dataclass
-from driftpy.types import MarketType
-from driftpy.dlob.dlob_node import DLOBNode
+from driftpy.types import MarketType, PerpPosition, SpotPosition, PerpMarketAccount, SpotMarketAccount
+from driftpy.dlob.dlob_node import DLOBNode  
+from decimal import Decimal
 
 MakerNodeMap = dict[str, list[DLOBNode]]
+
+PositionType = Union[PerpPosition, SpotPosition]
+
+MarketAccountType = Union[PerpMarketAccount, SpotMarketAccount]
 
 
 class Bot(ABC):
@@ -43,12 +48,12 @@ class BotConfig:
 
 @dataclass
 class MarketMakerConfig(BotConfig):
-    # market_indexes: list[int]
-    # sub_accounts: list[int]
-    # market_type: MarketType
-    target_leverage: float = 1.0
-    spread: float = 0.0
-
+    max_position_size: Decimal
+    order_size: Decimal
+    num_levels: int
+    base_spread: Decimal
+    risk_factor: Decimal
+    inventory_target: Decimal
 
 
 @dataclass
@@ -58,12 +63,12 @@ class BollingerBandsConfig(BotConfig):
     sma_window: int
     lookback_days: int
     max_positions: int
-    # market_type: MarketType
-    target_leverage: float = 1.0
-    spread: float = 0.0
     max_loss: float
     target_profit: float
     size_multiplier: float
+    # market_type: MarketType
+    target_leverage: float = 1.0
+    spread: float = 0.0
     # symbol: str
     # timeframe: str
 

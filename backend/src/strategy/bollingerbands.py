@@ -7,6 +7,7 @@ from src.api.drift.api import DriftAPI
 from src.common.types import BollingerBandsConfig, Bot
 from typing import Optional
 
+
 logger = logging.getLogger(__name__)
 
 class BollingerBandsStrategy(Bot):
