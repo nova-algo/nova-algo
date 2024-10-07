@@ -1,4 +1,7 @@
 .pytest_cache/
 *.pyc
-__pycache__/
-backend/src/__pycache__/
+#backend/.env
+#__pycache__/
+
+*.pyo
+*.pyd
