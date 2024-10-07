@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
+  Container,
   Flex,
   HStack,
   Heading,
@@ -29,6 +30,7 @@ import Head from "next/head";
 import Footer from "@/components/Footer";
 import { Vault } from "@/types";
 import VaultLoadingSkeleton from "@/components/VaultLoadingSkeleton";
+import VaultLiveData from "@/components/VaultLiveData";
 
 const MotionBox = motion.create(Box as any);
 const MotionFlex = motion.create(Flex as any);
@@ -181,131 +183,146 @@ export default function VaultPage() {
               </Text>
             </Stack>
           </HStack>
-
-          <MotionFlex
-            mx="auto"
-            wrap={{ lg: "nowrap", base: "wrap" }}
-            justify="space-between"
-            maxW="1350px"
-            pb={10}
-            px={{ lg: 6, md: 5, base: 2 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Tabs
-              display="flex"
-              flexDir="column"
+          <Container maxW={"1350px"}>
+            <MotionFlex
               mx="auto"
-              colorScheme="blue"
-              variant="solid-rounded"
-              px={{ base: 2, lg: 3 }}
-              w={{ lg: "fit-content", base: "100%" }}
+              // w="full"
+              wrap={{ lg: "nowrap", base: "wrap" }}
+              gap={10}
+              justify="space-between"
+              // maxW="1400px"
+              pb={10}
+              // px={{ lg: 5, md: 5, base: 2 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <TabList
-                // maxW="fit-content"
-                flexWrap={{ base: "wrap", sm: "nowrap" }}
-                justifyContent={{ base: "center" }}
-                gap={{ lg: 8, base: 4, sm: 6 }}
-                border="1px"
-                rounded={{ sm: "full", base: "md" }}
-                borderColor={borderColor}
-                pos="relative"
+              <Tabs
+                display="flex"
+                flex={1}
+                flexDir="column"
                 mx="auto"
-                mb={8}
+                colorScheme="blue"
+                variant="solid-rounded"
+                px={{ base: 2, lg: 3 }}
+                w={{ lg: "fit-content", base: "100%" }}
               >
-                <Tab {...tabBtnStyle}>Vault Performance</Tab>
-                <Tab {...tabBtnStyle}>Your Performance</Tab>
-                <Tab {...tabBtnStyle}>Overview</Tab>
-              </TabList>
+                <TabList
+                  // maxW="fit-content"
+                  flexWrap={{ base: "wrap", sm: "nowrap" }}
+                  justifyContent={{ base: "center" }}
+                  gap={{ lg: 8, base: 4, sm: 6 }}
+                  border="1px"
+                  rounded={{ sm: "full", base: "md" }}
+                  borderColor={borderColor}
+                  pos="relative"
+                  mx="auto"
+                  mb={8}
+                >
+                  <Tab {...tabBtnStyle}>Vault Performance</Tab>
+                  <Tab {...tabBtnStyle}>Your Performance</Tab>
+                  <Tab {...tabBtnStyle}>Overview</Tab>
+                </TabList>
 
-              <TabPanels>
-                <TabPanel px={{ base: 0, md: 4 }}>
-                  <Stack gap={5} flex={1}>
-                    <SectionHeading
-                      title="Performance Breakdown"
-                      // containerStyleProps={{ mt: 0 }}
-                    />
-                    <DataList data={vaultPerformanceData} />
-                    <Box>
-                      <SectionHeading title="Cumulative Performance" />
-                      <VaultChart />
-                    </Box>
-                    <SectionHeading title="Vault Details" />
-                  </Stack>
-                </TabPanel>
-
-                <TabPanel>
-                  <Stack gap={5}>
-                    <Box>
+                <TabPanels>
+                  <TabPanel px={{ base: 0, md: 4 }}>
+                    <Stack gap={5} flex={1}>
                       <SectionHeading
-                        title="Summary"
-                        //   containerStyleProps={{ mt: 0 }}
+                        title="Performance Breakdown"
+                        // containerStyleProps={{ mt: 0 }}
                       />
-                      <HStack
-                        my={6}
-                        divider={<LineDivider styleProps={{ w: "2px" }} />}
-                        justify="space-around"
-                      >
-                        <Stack fontSize="18px" textAlign="center">
-                          <Text
-                            fontSize={{ base: "20px", md: "22px" }}
-                            fontWeight={700}
-                            color={textColor}
-                          >
-                            $0.0
-                          </Text>
-                          <Text color="gray.500">Your Balance</Text>
-                        </Stack>
-                        <Stack fontSize="18px" textAlign="center">
-                          <Text
-                            fontSize={{ base: "20px", md: "22px" }}
-                            fontWeight={700}
-                            color={textColor}
-                          >
-                            $0.00
-                          </Text>
-                          <Text color="gray.500">
-                            Total Earnings (All Time)
-                          </Text>
-                        </Stack>
-                      </HStack>
-                    </Box>
-                    <Box>
-                      <SectionHeading title="Performance Breakdown" />
-                      <DataList data={yourPerformanceData} />
-                    </Box>
-                  </Stack>
-                </TabPanel>
+                      <DataList data={vaultPerformanceData} />
+                      <Box>
+                        <SectionHeading title="Cumulative Performance" />
+                        <VaultChart />
+                      </Box>
+                    </Stack>
+                  </TabPanel>
 
-                <TabPanel>
-                  <Stack gap={6}>
-                    <Box>
-                      <SectionHeading
-                        title="Strategy"
-                        //   containerStyleProps={{ mt: 0 }}
-                      />
-                      <MarkdownRenderer markdown={vault?.strategy as string} />
-                    </Box>
-                    <Box>
-                      <SectionHeading title="Risks" />
-                      <MarkdownRenderer markdown={vault?.risk as string} />
-                    </Box>
-                  </Stack>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
+                  <TabPanel>
+                    <Stack gap={5}>
+                      <Box>
+                        <SectionHeading
+                          title="Summary"
+                          //   containerStyleProps={{ mt: 0 }}
+                        />
+                        <HStack
+                          my={6}
+                          divider={<LineDivider styleProps={{ w: "2px" }} />}
+                          justify="space-around"
+                        >
+                          <Stack fontSize="18px" textAlign="center">
+                            <Text
+                              fontSize={{ base: "20px", md: "22px" }}
+                              fontWeight={700}
+                              color={textColor}
+                            >
+                              $0.0
+                            </Text>
+                            <Text color="gray.500">Your Balance</Text>
+                          </Stack>
+                          <Stack fontSize="18px" textAlign="center">
+                            <Text
+                              fontSize={{ base: "20px", md: "22px" }}
+                              fontWeight={700}
+                              color={textColor}
+                            >
+                              $0.00
+                            </Text>
+                            <Text color="gray.500">
+                              Total Earnings (All Time)
+                            </Text>
+                          </Stack>
+                        </HStack>
+                      </Box>
+                      <Box>
+                        <SectionHeading title="Performance Breakdown" />
+                        <DataList data={yourPerformanceData} />
+                      </Box>
+                    </Stack>
+                  </TabPanel>
 
-            <Box
+                  <TabPanel>
+                    <Stack gap={6}>
+                      <Box>
+                        <SectionHeading
+                          title="Strategy"
+                          //   containerStyleProps={{ mt: 0 }}
+                        />
+                        <MarkdownRenderer
+                          markdown={vault?.strategy as string}
+                        />
+                      </Box>
+                      <Box>
+                        <SectionHeading title="Risks" />
+                        <MarkdownRenderer markdown={vault?.risk as string} />
+                      </Box>
+                    </Stack>
+                  </TabPanel>
+                </TabPanels>
+              </Tabs>
+
+              <Box
+                mx={"auto"}
+                px={0}
+                minW={{ md: 400, base: 250 }}
+                w={{ base: "full", lg: "auto" }}
+                maxW={{ base: "600", lg: 400 }}
+              >
+                <DepositOrWithdrawalBox />
+              </Box>
+            </MotionFlex>
+            <Container
+              pb={8}
+              pt={2}
+              px={{ base: 0, lg: 3 }}
+              maxW={"container.xl"}
               mx={"auto"}
-              px={0}
-              minW={{ md: 400, base: 250 }}
-              w={{ base: "full", lg: "auto" }}
-              maxW={{ base: "600", lg: 400 }}
             >
-              <DepositOrWithdrawalBox />
-            </Box>
-          </MotionFlex>
+              <SectionHeading title="Vault Details" />
+              <VaultLiveData />
+            </Container>
+          </Container>
         </MotionBox>
       </MotionBox>
       <Footer />

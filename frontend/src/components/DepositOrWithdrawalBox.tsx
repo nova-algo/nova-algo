@@ -155,10 +155,16 @@ export const DepositOrWithdrawalBox = ({}: {
     >
       <Tabs onChange={setActiveTab} isFitted variant="enclosed">
         <TabList p={1}>
-          <Tab _selected={{ color: "blue.500", borderColor: "blue.500" }}>
+          <Tab
+            _selected={{ color: "blue.500", borderColor: "blue.500" }}
+            rounded={"full"}
+          >
             Deposit
           </Tab>
-          <Tab _selected={{ color: "blue.500", borderColor: "blue.500" }}>
+          <Tab
+            _selected={{ color: "blue.500", borderColor: "blue.500" }}
+            rounded="full"
+          >
             Withdraw
           </Tab>
         </TabList>

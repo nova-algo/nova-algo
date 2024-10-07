@@ -11,6 +11,7 @@ import {
   HStack,
   Avatar,
   Stack,
+  Flex,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { Link } from "@chakra-ui/next-js";
@@ -69,8 +70,8 @@ const VaultCard: React.FC<{ vault: Vault }> = ({ vault }) => {
       overflow="hidden"
       boxShadow="lg"
     >
-      <Box p={6}>
-        <VStack align="start" spacing={3}>
+      <Box p={6} display="flex" flexDirection="column" height="100%">
+        <VStack align="start" spacing={3} flex="1">
           <HStack>
             <Avatar size="md" src="https://bit.ly/dan-abramov" />
             <Heading as="h3" size="lg" color={textColor}>
@@ -111,21 +112,24 @@ const VaultCard: React.FC<{ vault: Vault }> = ({ vault }) => {
               </HStack>
             </Stack>
           </HStack>
-
-          <MotionButton
-            as={Link}
-            href={`/vaults/${vault.id}`}
-            textDecor="none"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            bgGradient="linear(to-r, #4A90E2, #9B59B6)"
-            color="white"
-            _hover={{
-              bgGradient: "linear(to-r, #4A90E2, #9B59B6)",
-            }}
-          >
-            Explore Vault
-          </MotionButton>
+          <Flex flex={1} align={"flex-end"}>
+            <MotionButton
+              as={Link}
+              href={`/vaults/${vault.id}`}
+              textDecor="none"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              bgGradient="linear(to-r, #4A90E2, #9B59B6)"
+              color="white"
+              _hover={{
+                bgGradient: "linear(to-r, #4A90E2, #9B59B6)",
+              }}
+              // mt="4"
+              // w="100%"
+            >
+              Explore Vault
+            </MotionButton>
+          </Flex>
         </VStack>
       </Box>
     </MotionBox>
