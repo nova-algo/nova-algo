@@ -96,7 +96,9 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           return result.data as WalletData;
         });
         const solWallet = wallets.find(
-          (w) => w.network_name.toLowerCase() === "solana_devnet"
+          (w) =>
+            w.network_name.toLowerCase() === "solana" ||
+            w.network_name.toLowerCase() === "solana_devnet"
         );
         if (solWallet) {
           setAddress(solWallet.address);
