@@ -10,7 +10,7 @@ from io import StringIO
 from driftpy.types import OrderType, OrderParams, PositionDirection, MarketType # type: ignore
 from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
 from src.api.drift.api import DriftAPI
-from src.common.types import MarketMakerConfig, Bot
+from src.common.types import MarketAccountType, MarketMakerConfig, Bot, PositionType
 from typing import Optional
 
 # Configure logging
@@ -33,6 +33,8 @@ class MarketMaker(Bot):
         self.last_trade_price = None
         self.order_book: Dict[str, List[Tuple[Decimal, Decimal]]] = {'bids': [], 'asks': []}
         
+        self.inventory_extreme = Decimal('50')
+        self.max_orders = 8
         self.health_check_interval = 60
         self.last_health_check = 0
         self.is_healthy = True
@@ -43,14 +45,177 @@ class MarketMaker(Bot):
         Initialize the market maker by setting up the market index and initial position.
         """
         # Initialize the position
-        position = await self.drift_api.get_position(self.market_index)
+        position: Optional[PositionType] = await self.drift_api.get_position(self.market_index, self.config.market_type)
         if position:
             self.position_size = Decimal(str(position.base_asset_amount)) / BASE_PRECISION
+        else:
+            self.position_size = Decimal('0')
         
         logger.info(f"Initialized market maker for {self.config.symbol} (Market Index: {self.market_index})")
         logger.info(f"Initial position size: {self.position_size}")
         
+    async def _skew(self) -> Tuple[float, float]:
+        """
+        Calculates the skew for bid and ask orders based on the current inventory level and generate skew value.
+        """
+        skew = self._generate_skew()
+        skew = round(skew, 2)
+        
+        bid_skew = max(0, min(skew, 1))
+        ask_skew = max(0, min(-skew, 1))
+        
+        inventory_delta = self.position_size - self.config.inventory_target
+        bid_skew += float(inventory_delta) if inventory_delta < 0 else 0
+        ask_skew -= float(inventory_delta) if inventory_delta > 0 else 0
+        
+        bid_skew = bid_skew if inventory_delta > -self.inventory_extreme else 1
+        ask_skew = ask_skew if inventory_delta < +self.inventory_extreme else 1
 
+        if (bid_skew == 1 or ask_skew == 1) and (inventory_delta == 0):
+            return 0, 0
+
+        return abs(bid_skew), abs(ask_skew)
+    
+    def _generate_skew(self) -> float:
+        """
+        Generate a base skew value from market features.
+        This is a placeholder and should be implemented based on your specific market features.
+        """
+        # Implement your skew generation logic here
+        return 0.0  # Placeholder return
+
+    def _prices(self, bid_skew: float, ask_skew: float) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        """
+        Generates a list of bid and ask prices based on market conditions and skew.
+        """
+        best_bid, best_ask = self.order_book['bids'][0][0], self.order_book['asks'][0][0]
+        spread = self._adjusted_spread()
+
+        if bid_skew >= 1:
+            bid_lower = best_bid - (spread * self.max_orders)
+            bid_prices = np.linspace(best_bid, bid_lower, self.max_orders)
+            return bid_prices, None
+        elif ask_skew >= 1:
+            ask_upper = best_ask + (spread * self.max_orders)
+            ask_prices = np.linspace(best_ask, ask_upper, self.max_orders)
+            return None, ask_prices
+        elif bid_skew >= ask_skew:
+            best_bid = best_ask - spread * 0.33
+            best_ask = best_bid + spread * 0.67
+        elif bid_skew < ask_skew:
+            best_ask = best_bid + spread * 0.33
+            best_bid = best_ask - spread * 0.67
+
+        base_range = self.config.volatility_value / 2
+        bid_lower = best_bid - (base_range * (1 - bid_skew))
+        ask_upper = best_ask + (base_range * (1 - ask_skew))
+
+        bid_prices = np.geomspace(best_bid, bid_lower, self.max_orders // 2)
+        ask_prices = np.geomspace(best_ask, ask_upper, self.max_orders // 2)
+
+        return bid_prices, ask_prices
+
+    def _sizes(self, bid_skew: float, ask_skew: float) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        """
+        Calculates order sizes for bid and ask orders, adjusting based on skew and inventory levels.
+        """
+        if bid_skew >= 1:
+            bid_sizes = np.full(
+                shape=self.max_orders,
+                fill_value=np.median([self.config.min_order_size, self.config.max_order_size / 2])
+            )
+            return bid_sizes, None
+        elif ask_skew >= 1:
+            ask_sizes = np.full(
+                shape=self.max_orders,
+                fill_value=np.median([self.config.min_order_size, self.config.max_order_size / 2])
+            )
+            return None, ask_sizes
+
+        bid_min = self.config.min_order_size * (1 + bid_skew**0.5)
+        bid_upper = self.config.max_order_size * (1 - bid_skew)
+        ask_min = self.config.min_order_size * (1 + ask_skew**0.5)
+        ask_upper = self.config.max_order_size * (1 - ask_skew)
+
+        bid_sizes = np.geomspace(
+            start=bid_min if bid_skew >= ask_skew else self.config.min_order_size,
+            stop=bid_upper,
+            num=self.max_orders // 2
+        )
+        ask_sizes = np.geomspace(
+            start=ask_min if ask_skew >= bid_skew else self.config.min_order_size,
+            stop=ask_upper,
+            num=self.max_orders // 2
+        )
+
+        return bid_sizes, ask_sizes
+
+    def _adjusted_spread(self) -> Decimal:
+        """
+        Adjusts the base spread of orders based on current market volatility.
+        """
+        # Implement your spread adjustment logic here
+        return self.config.base_spread  # Placeholder return
+
+    async def generate_quotes(self) -> List[Tuple[str, float, float]]:
+        """
+        Generates a list of market making quotes to be placed on the exchange.
+        """
+        bid_skew, ask_skew = self._skew()
+        bid_prices, ask_prices = self._prices(bid_skew, ask_skew)
+        bid_sizes, ask_sizes = self._sizes(bid_skew, ask_skew)
+
+        quotes = []
+
+        if bid_prices is not None and bid_sizes is not None:
+            for price, size in zip(bid_prices, bid_sizes):
+                quotes.append(("Buy", float(price), float(size)))
+
+        if ask_prices is not None and ask_sizes is not None:
+            for price, size in zip(ask_prices, ask_sizes):
+                quotes.append(("Sell", float(price), float(size)))
+
+        logger.info(f"Generated {len(quotes)} quotes")
+        return quotes
+
+    async def place_orders(self):
+        """
+        Place new orders based on the generated quotes.
+        """
+        await self.cancel_all_orders()
+        quotes = await self.generate_quotes()
+
+        for side, price, size in quotes:
+            order_params = OrderParams(
+                order_type=OrderType.Limit(),
+                market_type=self.config.market_type,
+                direction=PositionDirection.Long() if side == "Buy" else PositionDirection.Short(),
+                base_asset_amount=int(size * BASE_PRECISION),
+                price=int(price * PRICE_PRECISION),
+                market_index=self.market_index,
+                reduce_only=False
+            )
+            result = await self.drift_api.place_order_and_get_order_id(order_params)
+            if result:
+                tx_sig, order_id = result
+                if order_id is not None:
+                    logger.info(f"Order placed successfully. Tx sig: {tx_sig}, Order ID: {order_id}")
+                    self.current_orders[order_id] = order_params
+                else:
+                    logger.warning(f"Order placed, but couldn't retrieve Order ID. Tx sig: {tx_sig}")
+            else:
+                logger.error("Failed to place order")
+
+    async def start_interval_loop(self, interval_ms: int = 1000):
+        while True:
+            try:
+                await self.update_order_book()
+                await self.update_position()
+                await self.place_orders()
+                await asyncio.sleep(interval_ms / 1000)
+            except Exception as e:
+                logger.error(f"An error occurred: {str(e)}")
+                await asyncio.sleep(10)
     async def reset(self):
         """
         Reset the market maker state and cancel all existing orders.
@@ -94,8 +259,8 @@ class MarketMaker(Bot):
                 await self.place_orders()
                 
                 # Update last trade price
-                market = self.drift_api.get_market(self.market_index)
-                self.last_trade_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+                market = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+                self.last_trade_price = Decimal(str(market.price)) / PRICE_PRECISION
                 
                 await asyncio.sleep(interval_ms / 1000)
             except Exception as e:
@@ -169,8 +334,8 @@ class MarketMaker(Bot):
         
         # Adjust spread based on market volatility
         if self.last_trade_price:
-            market = self.drift_api.get_market(self.market_index)
-            current_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
+            market_price_data = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+            current_price = Decimal(str(market_price_data.price)) / PRICE_PRECISION
             price_change = abs(current_price - self.last_trade_price) / self.last_trade_price
             spread += price_change * Decimal('0.5')  # Increase spread by 50% of the price change
         
@@ -184,9 +349,8 @@ class MarketMaker(Bot):
         :return: Two lists of Decimals, representing buy and sell prices
         """
         spread = self.calculate_dynamic_spread()
-        market = self.drift_api.get_market(self.market_index)
-        mid_price = Decimal(str(market.oracle_price)) / PRICE_PRECISION
-        
+        market_price_data = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+        mid_price = Decimal(str(market_price_data.price)) / PRICE_PRECISION
         half_spread = spread / 2
         buy_prices = [mid_price - half_spread - Decimal('0.01') * i for i in range(self.config.num_levels)]
         sell_prices = [mid_price + half_spread + Decimal('0.01') * i for i in range(self.config.num_levels)]
@@ -213,8 +377,17 @@ class MarketMaker(Bot):
                 market_index=self.market_index,
                 reduce_only=False
             )
-            buy_order = await self.drift_api.drift_client.place_order(buy_params)
-            self.current_orders[buy_order.order_id] = buy_params
+            result = await self.drift_api.place_order_and_get_order_id(buy_params)
+            if result:
+                tx_sig, order_id = result
+                if order_id is not None:
+                    print(f"Order placed successfully. Tx sig: {tx_sig}, Order ID: {order_id}")
+                else:
+                    print(f"Order placed, but couldn't retrieve Order ID. Tx sig: {tx_sig}")
+            else:
+                print("Failed to place order")
+
+            self.current_orders[order_id] = buy_params
             
             # Place sell order
             sell_params = OrderParams(
@@ -226,9 +399,20 @@ class MarketMaker(Bot):
                 market_index=self.market_index,
                 reduce_only=False
             )
-            sell_order = await self.drift_api.drift_client.place_order(sell_params)
-            self.current_orders[sell_order.order_id] = sell_params
-        
+            result = await self.drift_api.place_order_and_get_order_id(sell_params)
+            
+            if result:
+                tx_sig, order_id = result
+                if order_id is not None:
+                    print(f"Order placed successfully. Tx sig: {tx_sig}, Order ID: {order_id}")
+                else:
+                    print(f"Order placed, but couldn't retrieve Order ID. Tx sig: {tx_sig}")
+            else:
+                print("Failed to place order")
+
+            self.current_orders[order_id] = sell_params
+            #self.current_orders = self.drift_api.get_user_orders_map()
+            
         logger.info(f"Placed {len(self.current_orders)} orders")
 
     async def cancel_all_orders(self):
@@ -256,14 +440,14 @@ class MarketMaker(Bot):
                 reduce_only=False
             )
             
-            await self.drift_api.drift_client.place_order(order_params)
+            await self.drift_api.place_order(order_params)
             logger.info(f"Placed inventory management order: {'sell' if direction == PositionDirection.Short() else 'buy'} {size}")
 
     async def update_position(self):
         """
         Update the current position size.
         """
-        position = await self.drift_api.get_position(self.market_index)
+        position: PositionType = await self.drift_api.get_position(self.market_index)
         if position:
             self.position_size = Decimal(str(position.base_asset_amount)) / BASE_PRECISION
         else:
