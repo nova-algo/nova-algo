@@ -24,6 +24,7 @@ import {
 import { motion } from "framer-motion";
 import { BsChevronDown } from "react-icons/bs";
 import { CustomRadioGroup } from "./CustomRadioGroup";
+import { formatNumber } from "@/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MotionBox = motion.create(Box as any);
@@ -58,7 +59,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
         <Text fontWeight="bold" color={textColor}>
           {label}
         </Text>
-        <Text color="blue.500">Value: {payload[0].value.toFixed(2)}</Text>
+        <Text color="blue.500">Value: {formatNumber(payload[0].value)}</Text>
       </Box>
     );
   }
@@ -72,7 +73,7 @@ const generateMockData = (days: number): DataPoint[] => {
     const date = subDays(now, i);
     data.push({
       date: format(date, "dd/MM"),
-      value: Math.random() * 1000 + 500,
+      value: Math.random() * 2e5 + 500,
     });
   }
   return data;
@@ -149,7 +150,7 @@ const VaultChart: React.FC = () => {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
-            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 0, left: 12, bottom: 0 }}
           >
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -174,7 +175,7 @@ const VaultChart: React.FC = () => {
               tick={{ fill: textColor }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(value) => `$${value.toFixed(0)}`}
+              tickFormatter={(value) => `$${formatNumber(value)}`}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area
