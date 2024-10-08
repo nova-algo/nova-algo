@@ -70,7 +70,7 @@ We adhere to strict data protection policies and never share your information wi
 \n## Support
 
 \n### How can I contact customer support?
-Reach out via email at support@novaalgo.com, or on X (Twitter) https://x.com/@novaalgo.
+Reach out via email at support@novaalgo.xyz, or on X (Twitter) https://x.com/@novaalgo.
 
 \n### Do you offer educational resources?
 Yes, we provide a knowledge base, webinars, and blog posts to help you make informed decisions.`}

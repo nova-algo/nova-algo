@@ -92,14 +92,6 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, [address, accountType]);
   useEffect(() => {
-    console.log({
-      address,
-      isAuth:
-        accountType !== null ||
-        (status !== "loading" && status !== "unauthenticated") ||
-        address.trim() !== "",
-    });
-
     setIsAuthenticated(
       accountType !== null ||
         (status !== "loading" && status !== "unauthenticated") ||

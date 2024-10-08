@@ -114,19 +114,23 @@ export default function Header() {
           );
           authToken = authDetails?.authToken;
         }
-        const { wallets } = await createWallet(authToken);
-        console.log({ wallets });
+        try {
+          const { wallets } = await createWallet(authToken);
 
-        if (wallets.length > 0) {
-          const solWallet = wallets.find(
-            (wallet) => wallet.network_name.toLowerCase() === "solana_devnet"
-          );
-
-          setAddress(solWallet?.address as string);
-        }
+          if (wallets.length > 0) {
+            const solWallet = wallets.find(
+              (wallet) =>
+                wallet.network_name.toLowerCase() === "solana" ||
+                wallet.network_name.toLowerCase() === "solana_devnet"
+            );
+            if (solWallet) {
+              setAddress(solWallet?.address as string);
+            } else {
+              setAddress("");
+            }
+          }
+        } catch (error) {}
       });
-
-      // fetchWallets();
     }
     // })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

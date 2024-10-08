@@ -51,7 +51,8 @@ import {
   LuMenu,
   LuPlus,
   LuChevronDown,
-  LuDownload,
+  LuDollarSign,
+  LuCoins,
 } from "react-icons/lu";
 import { IconType } from "react-icons";
 import VaultChart from "@/components/VaultChart";
@@ -61,6 +62,7 @@ import { objectToQueryParams } from "@/utils";
 import { useFormik } from "formik";
 import { object, string } from "yup";
 import { useRouter } from "next/router";
+import { OktoContextType, useOkto } from "okto-sdk-react";
 
 type FormFields = {
   address: string;
@@ -76,6 +78,7 @@ const UserDashboard = () => {
   const [canLoad, setCanLoad] = useState(false);
   const { data: session } = useNextAuthSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { showWidgetModal } = useOkto() as OktoContextType;
   const router = useRouter();
   const {
     isOpen: isModalOpen,
@@ -238,19 +241,34 @@ const UserDashboard = () => {
               value={"SOL: " + balance.substring(0, 7)}
             >
               <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
-                <Button onClick={onModalOpen} size={"sm"} leftIcon={<LuPlus />}>
+                <Button
+                  onClick={() => {
+                    accountType === "GOOGLE"
+                      ? showWidgetModal()
+                      : onModalOpen();
+                  }}
+                  size={"sm"}
+                  leftIcon={<LuPlus />}
+                >
                   Fund wallet
                 </Button>
               </HStack>
             </StatCard>
             <StatCard icon={LuTrendingUp} title="Total Profit" value="$34.56">
-              <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
+              <HStack mt={3} wrap={"wrap"} spacing={"3"}>
+                <Button
+                  // onClick={handleWithdraw}
+                  size={"sm"}
+                  leftIcon={<LuCoins />}
+                >
+                  Withdraw crypto
+                </Button>
                 <Button
                   onClick={handleWithdraw}
                   size={"sm"}
-                  leftIcon={<LuDownload />}
+                  leftIcon={<LuDollarSign />}
                 >
-                  Withdraw
+                  Withdraw Fiat
                 </Button>
               </HStack>
             </StatCard>
@@ -430,27 +448,47 @@ const UserDashboard = () => {
     </Flex>
   );
 };
-const Sidebar = () => (
-  <VStack spacing={4} align="stretch">
-    <SidebarItem icon={LuHome} label="Dashboard" />
-    <SidebarItem icon={LuWallet} label="Vaults" />
-    <SidebarItem icon={LuTrendingUp} label="Analytics" />
-    <SidebarItem icon={LuUser} label="Profile" />
-    <SidebarItem icon={LuSettings} label="Settings" />
-  </VStack>
-);
 
-const SidebarItem = ({ icon, label }: { icon: IconType; label: string }) => (
-  <Button
-    leftIcon={createElement(icon)}
-    justifyContent="flex-start"
-    variant="ghost"
-    width="100%"
-  >
-    {label}
-  </Button>
-);
+const Sidebar = () => {
+  return (
+    <VStack spacing={4} align="stretch">
+      <SidebarItem icon={LuHome} label="Dashboard" />
+      <SidebarItem icon={LuWallet} label="Vaults" />
+      <SidebarItem icon={LuTrendingUp} label="Analytics" />
+      <SidebarItem icon={LuUser} label="Profile" />
+      <SidebarItem icon={LuSettings} label="Settings" />
+    </VStack>
+  );
+};
 
+const SidebarItem = ({
+  icon,
+  label,
+}: {
+  icon: IconType;
+  label: string;
+  active?: boolean;
+}) => {
+  const router = useRouter();
+
+  const pathname = router.pathname;
+  console.log({ pathname });
+
+  const active = "/" + label?.toLowerCase() === pathname?.toLowerCase();
+  return (
+    <Button
+      leftIcon={createElement(icon)}
+      justifyContent="flex-start"
+      variant="ghost"
+      width="100%"
+      _hover={{ bg: active ? "blue.600" : "blue.100" }}
+      color={active ? "white" : undefined}
+      bg={active ? "blue.500" : "transparent"}
+    >
+      {label}
+    </Button>
+  );
+};
 const StatCard = ({
   icon,
   title,

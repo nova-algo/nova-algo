@@ -47,7 +47,7 @@ export default function Footer() {
             <Link href="#" isExternal>
               LinkedIn
             </Link>
-            <Link href="mailto:support@novaalgo.com" isExternal>
+            <Link href="mailto:support@novaalgo.xyz" isExternal>
               Support
             </Link>
           </VStack>
