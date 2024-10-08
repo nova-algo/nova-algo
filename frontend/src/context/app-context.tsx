@@ -26,11 +26,13 @@ export const AppContext = createContext<{
   appkitModal: AppKit | null;
   isAuthenticated: boolean;
   setIsAuthenticated: (isAuth: boolean) => void;
+  balanceInUSD: string;
 }>({
   apiKey: "",
   isAuthenticated: false,
   setIsAuthenticated: () => {},
   buildType: BuildType.SANDBOX,
+  balanceInUSD: "",
   idToken: "",
   setIdToken: () => {},
   balanceSymbol: "",
@@ -55,9 +57,24 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [address, setAddress] = useState("");
   const [balance, setBalance] = useState("");
   const [balanceSymbol, setBalanceSymbol] = useState("SOL");
+  const [balanceInUSD, setBalanceInUSD] = useState("");
   const [accountType, setAccountType] = useState<USER_ACCOUNT_TYPE>(null);
   const appkitModal = createWalletConnectModal();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  async function fetchBalanceInUsd(solanaBalance: string) {
+    try {
+      const response = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+      );
+      const data = await response.json();
+      const solanaPrice = data?.solana?.usd;
+
+      const usdValue = +solanaBalance * solanaPrice;
+
+      return usdValue.toFixed(2);
+    } catch (e) {}
+  }
   useEffect(() => {
     (async () => {
       if (reownAccount.isConnected) {
@@ -66,6 +83,10 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         try {
           const balResult = await reownConnection?.getBalance(publicKey);
           const bal = (balResult || 0) / LAMPORTS_PER_SOL + "";
+          try {
+            const balInUsd = await fetchBalanceInUsd(bal);
+            setBalanceInUSD(balInUsd as string);
+          } catch (error) {}
           setBalance(bal);
         } catch (error) {}
         // setBalanceSymbol(reownConnection.get);
@@ -84,6 +105,10 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
           const balResult = await connection?.getBalance(publicKey);
 
           const bal = (balResult || 0) / LAMPORTS_PER_SOL + "";
+          try {
+            const balInUsd = await fetchBalanceInUsd(bal);
+            setBalanceInUSD(balInUsd as string);
+          } catch (error) {}
           setBalance(bal);
         } catch (error) {}
         // setBalanceSymbol(reownConnection.get);
@@ -101,6 +126,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider
       value={{
+        balanceInUSD,
         isAuthenticated,
         setIsAuthenticated,
         appkitModal,

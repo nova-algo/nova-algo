@@ -63,6 +63,7 @@ import { useFormik } from "formik";
 import { object, string } from "yup";
 import { useRouter } from "next/router";
 import { OktoContextType, useOkto } from "okto-sdk-react";
+import Head from "next/head";
 
 type FormFields = {
   address: string;
@@ -73,8 +74,14 @@ type FormFields = {
   currency: string;
 };
 const UserDashboard = () => {
-  const { balance, balanceSymbol, accountType, address, isAuthenticated } =
-    useAppContext();
+  const {
+    balance,
+
+    accountType,
+    address,
+    isAuthenticated,
+    balanceInUSD,
+  } = useAppContext();
   const [canLoad, setCanLoad] = useState(false);
   const { data: session } = useNextAuthSession();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -165,6 +172,7 @@ const UserDashboard = () => {
     } else {
       setCanLoad(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   if (!canLoad)
     return (
@@ -173,279 +181,280 @@ const UserDashboard = () => {
       </>
     );
   return (
-    <Flex>
-      {!isMobile && (
-        <Box
-          width="250px"
-          bg="gray.100"
-          p={4}
-          height="100vh"
-          pos={"sticky"}
-          top={0}
-        >
-          <Image
-            src="/images/desktop-logo-white.png"
-            alt="app logo"
-            maxW={"100px"}
-            ml={3}
-            mixBlendMode={"difference"}
-            mb={5}
-          />
-          <Sidebar />
-        </Box>
-      )}
-      <Box flex={1}>
-        <HStack
-          bg="gray.100"
-          height="50px"
-          p={4}
-          justify="space-between"
-          pos={"sticky"}
-          top={0}
-          zIndex={10}
-        >
-          {isMobile && (
-            <Button onClick={onOpen} leftIcon={<LuMenu />} variant="ghost">
-              Menu
-            </Button>
-          )}
-          <Link href="/">Back to site</Link>
-        </HStack>
-        <Box p={{ base: 4, md: 6, lg: 8 }}>
-          <HStack wrap="wrap" justify="space-between" mb={6}>
-            <Heading>
-              Welcome,{" "}
-              {accountType === "GOOGLE"
-                ? session?.user?.name?.split(" ")[0]
-                : "User"}
-            </Heading>
-            <Box>
-              <Text color="gray.600">Wallet balance:</Text>
-              <Text as="span">{balanceSymbol}:</Text>{" "}
-              <Text fontWeight={600} as="span">
-                {balance.substring(0, 7)}
-              </Text>
-            </Box>
-          </HStack>
-          <Grid
-            templateColumns={{
-              base: "repeat(autofit,minmax(250px,1fr))",
-              lg: "repeat(3, 1fr)",
-            }}
-            gap={6}
-            mb={8}
+    <>
+      <Head>
+        <title>Dashboard | NovaAlgo</title>
+        <meta
+          name="description"
+          content="NovaAlgo is a decentralized cryptocurrency exchange platform."
+        />
+      </Head>
+      <Flex>
+        {!isMobile && (
+          <Box
+            width="250px"
+            bg="gray.100"
+            p={4}
+            height="100vh"
+            pos={"sticky"}
+            top={0}
           >
-            <StatCard
-              icon={LuWallet}
-              title="Total Balance"
-              value={"SOL: " + balance.substring(0, 7)}
-            >
-              <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
-                <Button
-                  onClick={() => {
-                    accountType === "GOOGLE"
-                      ? showWidgetModal()
-                      : onModalOpen();
-                  }}
-                  size={"sm"}
-                  leftIcon={<LuPlus />}
-                >
-                  Fund wallet
-                </Button>
-              </HStack>
-            </StatCard>
-            <StatCard icon={LuTrendingUp} title="Total Profit" value="$34.56">
-              <HStack mt={3} wrap={"wrap"} spacing={"3"}>
-                <Button
-                  // onClick={handleWithdraw}
-                  size={"sm"}
-                  leftIcon={<LuCoins />}
-                >
-                  Withdraw crypto
-                </Button>
-                <Button
-                  onClick={handleWithdraw}
-                  size={"sm"}
-                  leftIcon={<LuDollarSign />}
-                >
-                  Withdraw Fiat
-                </Button>
-              </HStack>
-            </StatCard>
-            <StatCard icon={LuPieChart} title="Active Vaults" value="3" />
-          </Grid>
-          <Box mb={8}>
-            <Heading size="md" mb={4}>
-              Performance Overview
-            </Heading>
-            <VaultChart />
-          </Box>
-          <Grid
-            templateColumns={{
-              base: "repeat(autofit,minmax(250px,1fr))",
-              lg: "repeat(2, 1fr)",
-            }}
-            gap={6}
-          >
-            <Box p={6} borderWidth={1} borderRadius="lg">
-              <Heading size="md" mb={4}>
-                Your Vaults
-              </Heading>
-              <VStack align="stretch" spacing={4}>
-                <VaultItem
-                  name="Growth Fund"
-                  balance="$5,000"
-                  profit="+12.3%"
-                />
-                <VaultItem
-                  name="Tech Innovators"
-                  balance="$3,000"
-                  profit="+8.7%"
-                />
-                <VaultItem
-                  name="Green Energy"
-                  balance="$2,245"
-                  profit="+5.2%"
-                />
-              </VStack>
-            </Box>
-            <Box p={6} borderWidth={1} borderRadius="lg">
-              <Heading size="md" mb={4}>
-                Recent Transactions
-              </Heading>
-              <VStack align="stretch" spacing={4}>
-                <TransactionItem
-                  type="Deposit"
-                  amount="$1,000"
-                  date="2023-06-01"
-                />
-                <TransactionItem
-                  type="Withdrawal"
-                  amount="$500"
-                  date="2023-05-28"
-                />
-                <TransactionItem
-                  type="Deposit"
-                  amount="$2,000"
-                  date="2023-05-15"
-                />
-              </VStack>
-            </Box>
-          </Grid>
-        </Box>
-      </Box>
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={onModalClose}
-        size={{ base: "full", sm: "md" }}
-        motionPreset={"slideInBottom"}
-      >
-        <ModalOverlay />
-        <ModalContent rounded={"24px"}>
-          <ModalHeader>Fund Wallet</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Stack
-              as={"form"}
-              spacing={4}
-              // @ts-expect-error works fine
-              onSubmit={formik.handleSubmit}
-            >
-              <FormControl
-                isInvalid={
-                  !!formik.errors.fiat_amount && formik.touched.fiat_amount
-                }
-              >
-                <FormLabel htmlFor="fiat_amount">Amount:</FormLabel>
-                <NumberInput
-                  isRequired
-                  id="fiat_amount"
-                  name="fiat_amount"
-                  min={1}
-                  value={formik.values.fiat_amount}
-                >
-                  <NumberInputField
-                    onChange={formik.handleChange}
-                    rounded={"full"}
-                    placeholder="Enter amount"
-                  />
-                  {formik.errors.fiat_amount && (
-                    <FormErrorMessage>
-                      {formik.errors.fiat_amount}
-                    </FormErrorMessage>
-                  )}
-                </NumberInput>
-              </FormControl>
-              <FormControl>
-                <FormLabel htmlFor="currency">Currency:</FormLabel>
-                <Menu>
-                  <MenuButton
-                    variant={"outline"}
-                    id="currency"
-                    as={Button}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    {formik.values.fiat_currency}
-                  </MenuButton>
-                  <MenuList onClick={handleCurrencySelect}>
-                    <MenuItem value="USD">USD</MenuItem>
-                    <MenuItem value="EUR">EUR</MenuItem>
-                  </MenuList>
-                </Menu>
-              </FormControl>
-              <FormControl>
-                <FormLabel htmlFor="token">Token:</FormLabel>
-                <Menu>
-                  <MenuButton
-                    variant={"outline"}
-                    id="token"
-                    as={Button}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    {formik.values.currency}
-                  </MenuButton>
-                  <MenuList onClick={handleTokenSelect}>
-                    <MenuItem value="USDT">USDT</MenuItem>
-                    <MenuItem value="USDC">USDC</MenuItem>
-                    <MenuItem value="SOL">SOL</MenuItem>
-                  </MenuList>
-                </Menu>
-              </FormControl>
-              <Stack>
-                <Button
-                  isLoading={formik.isSubmitting}
-                  loadingText="Redirecting you..."
-                  type="submit"
-                  colorScheme="blue"
-                >
-                  Fund Wallet
-                </Button>
-                <Text
-                  color={"gray.500"}
-                  fontSize={"x-small"}
-                  textAlign={"center"}
-                >
-                  You will be redirected to Mercuryo to complete the
-                  transaction.
-                </Text>
-              </Stack>
-            </Stack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-
-      <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>Menu</DrawerHeader>
-          <DrawerBody>
+            <Image
+              src="/images/desktop-logo-white.png"
+              alt="app logo"
+              maxW={"100px"}
+              ml={3}
+              mixBlendMode={"difference"}
+              mb={5}
+            />
             <Sidebar />
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-    </Flex>
+          </Box>
+        )}
+        <Box flex={1}>
+          <HStack
+            bg="gray.100"
+            height="50px"
+            p={4}
+            justify="space-between"
+            pos={"sticky"}
+            top={0}
+            zIndex={10}
+          >
+            {isMobile && (
+              <Button onClick={onOpen} leftIcon={<LuMenu />} variant="ghost">
+                Menu
+              </Button>
+            )}
+            <Link href="/">Back to site</Link>
+          </HStack>
+          <Box p={{ base: 4, md: 6, lg: 8 }}>
+            <HStack wrap="wrap" justify="space-between" mb={6}>
+              <Heading>
+                {accountType === "GOOGLE"
+                  ? "Welcome, " + session?.user?.name?.split(" ")[0]
+                  : "Welcome back"}
+              </Heading>
+            </HStack>
+            <Grid
+              templateColumns={{
+                base: "repeat(autofit,minmax(250px,1fr))",
+                lg: "repeat(3, 1fr)",
+              }}
+              gap={6}
+              mb={8}
+            >
+              <StatCard
+                icon={LuWallet}
+                title="Total Balance"
+                value={"$" + balanceInUSD}
+              >
+                <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
+                  <Button
+                    onClick={() => {
+                      accountType === "GOOGLE"
+                        ? showWidgetModal()
+                        : onModalOpen();
+                    }}
+                    size={"sm"}
+                    leftIcon={<LuPlus />}
+                  >
+                    Fund wallet
+                  </Button>
+                </HStack>
+              </StatCard>
+              <StatCard icon={LuTrendingUp} title="Total Profit" value="$34.56">
+                <HStack mt={3} wrap={"wrap"} spacing={"3"}>
+                  <Button
+                    // onClick={handleWithdraw}
+                    size={"sm"}
+                    leftIcon={<LuCoins />}
+                  >
+                    Withdraw crypto
+                  </Button>
+                  <Button
+                    onClick={handleWithdraw}
+                    size={"sm"}
+                    leftIcon={<LuDollarSign />}
+                  >
+                    Withdraw Fiat
+                  </Button>
+                </HStack>
+              </StatCard>
+              <StatCard icon={LuPieChart} title="Active Vaults" value="3" />
+            </Grid>
+            <Box mb={8}>
+              <Heading size="md" mb={4}>
+                Performance Overview
+              </Heading>
+              <VaultChart />
+            </Box>
+            <Grid
+              templateColumns={{
+                base: "repeat(autofit,minmax(250px,1fr))",
+                lg: "repeat(2, 1fr)",
+              }}
+              gap={6}
+            >
+              <Box p={6} borderWidth={1} borderRadius="lg">
+                <Heading size="md" mb={4}>
+                  Your Vaults
+                </Heading>
+                <VStack align="stretch" spacing={4}>
+                  <VaultItem
+                    name="Growth Fund"
+                    balance="$5,000"
+                    profit="+12.3%"
+                  />
+                  <VaultItem
+                    name="Tech Innovators"
+                    balance="$3,000"
+                    profit="+8.7%"
+                  />
+                  <VaultItem
+                    name="Green Energy"
+                    balance="$2,245"
+                    profit="+5.2%"
+                  />
+                </VStack>
+              </Box>
+              <Box p={6} borderWidth={1} borderRadius="lg">
+                <Heading size="md" mb={4}>
+                  Recent Transactions
+                </Heading>
+                <VStack align="stretch" spacing={4}>
+                  <TransactionItem
+                    type="Deposit"
+                    amount="$1,000"
+                    date="2023-06-01"
+                  />
+                  <TransactionItem
+                    type="Withdrawal"
+                    amount="$500"
+                    date="2023-05-28"
+                  />
+                  <TransactionItem
+                    type="Deposit"
+                    amount="$2,000"
+                    date="2023-05-15"
+                  />
+                </VStack>
+              </Box>
+            </Grid>
+          </Box>
+        </Box>
+
+        <Modal
+          isOpen={isModalOpen}
+          onClose={onModalClose}
+          size={{ base: "full", sm: "md" }}
+          motionPreset={"slideInBottom"}
+        >
+          <ModalOverlay />
+          <ModalContent rounded={"24px"}>
+            <ModalHeader>Fund Wallet</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Stack
+                as={"form"}
+                spacing={4}
+                // @ts-expect-error works fine
+                onSubmit={formik.handleSubmit}
+              >
+                <FormControl
+                  isInvalid={
+                    !!formik.errors.fiat_amount && formik.touched.fiat_amount
+                  }
+                >
+                  <FormLabel htmlFor="fiat_amount">Amount:</FormLabel>
+                  <NumberInput
+                    isRequired
+                    id="fiat_amount"
+                    name="fiat_amount"
+                    min={1}
+                    value={formik.values.fiat_amount}
+                  >
+                    <NumberInputField
+                      onChange={formik.handleChange}
+                      rounded={"full"}
+                      placeholder="Enter amount"
+                    />
+                    {formik.errors.fiat_amount && (
+                      <FormErrorMessage>
+                        {formik.errors.fiat_amount}
+                      </FormErrorMessage>
+                    )}
+                  </NumberInput>
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="currency">Currency:</FormLabel>
+                  <Menu>
+                    <MenuButton
+                      variant={"outline"}
+                      id="currency"
+                      as={Button}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      {formik.values.fiat_currency}
+                    </MenuButton>
+                    <MenuList onClick={handleCurrencySelect}>
+                      <MenuItem value="USD">USD</MenuItem>
+                      <MenuItem value="EUR">EUR</MenuItem>
+                    </MenuList>
+                  </Menu>
+                </FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="token">Token:</FormLabel>
+                  <Menu>
+                    <MenuButton
+                      variant={"outline"}
+                      id="token"
+                      as={Button}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      {formik.values.currency}
+                    </MenuButton>
+                    <MenuList onClick={handleTokenSelect}>
+                      <MenuItem value="USDT">USDT</MenuItem>
+                      <MenuItem value="USDC">USDC</MenuItem>
+                      <MenuItem value="SOL">SOL</MenuItem>
+                    </MenuList>
+                  </Menu>
+                </FormControl>
+                <Stack>
+                  <Button
+                    isLoading={formik.isSubmitting}
+                    loadingText="Redirecting you..."
+                    type="submit"
+                    colorScheme="blue"
+                  >
+                    Fund Wallet
+                  </Button>
+                  <Text
+                    color={"gray.500"}
+                    fontSize={"x-small"}
+                    textAlign={"center"}
+                  >
+                    You will be redirected to Mercuryo to complete the
+                    transaction.
+                  </Text>
+                </Stack>
+              </Stack>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+          <DrawerOverlay />
+          <DrawerContent>
+            <DrawerCloseButton />
+            <DrawerHeader>Menu</DrawerHeader>
+            <DrawerBody>
+              <Sidebar />
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+      </Flex>
+    </>
   );
 };
 
