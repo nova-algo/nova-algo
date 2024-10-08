@@ -60,11 +60,11 @@ class BollingerBandsConfig(BotConfig):
     lookback_days: int
     max_positions: int
     # market_type: MarketType
-    target_leverage: float = 1.0
-    spread: float = 0.0
     max_loss: float
     target_profit: float
     size_multiplier: float
+    target_leverage: float = 1.0
+    spread: float = 0.0
     # symbol: str
     # timeframe: str
 
