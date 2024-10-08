@@ -6,6 +6,8 @@ import logging
 import asyncio
 from typing import Dict, List, Optional, Tuple, Union
 from dotenv import load_dotenv
+from spl.token.async_client import AsyncToken
+from spl.token.constants import TOKEN_PROGRAM_ID
 
 from anchorpy import Wallet # type: ignore
 from solders.keypair import Keypair # type: ignore
@@ -203,7 +205,7 @@ async def test_drift_api():
         wallet,
         "devnet", # using devnet 
         tx_params=TxParams(600_000, 100),
-        account_subscription=AccountSubscriptionConfig("cached", bulk_account_loader=bulk_account_loader)
+        account_subscription=AccountSubscriptionConfig("polling", bulk_account_loader=bulk_account_loader)
     )
 
     try:
@@ -226,6 +228,7 @@ async def test_drift_api():
     GET_POSITION = False
     GET_ORDER_INFO = False
     GET_MARKET_PRICE = False
+    DEPOSIT = False
 
     if MAKE_THE_ORDER:
         # market_index = 0
@@ -244,14 +247,15 @@ async def test_drift_api():
             base_asset_amount=drift_client.convert_to_perp_precision(0.01),
             market_index=0,
             direction=PositionDirection.Long(),
-            price=drift_client.convert_to_price_precision(100), # <--- here
-            post_only=PostOnlyParams.MustPostOnly(),
+            price=drift_client.convert_to_price_precision(30000), # <--- here
+            post_only=PostOnlyParams.TryPostOnly(),
         )
 
         result = await drift_client.place_perp_order(order_params)
         print("tx_sig", result)
 
     if SHOW_THE_ORDERS:
+        await drift_client.add_user(0)
         user =  drift_client.get_user()
         #open_positions = user.get_user_position(0)
         open_orders = user.get_open_orders()
@@ -288,6 +292,15 @@ async def test_drift_api():
         logger.info(f"market price data: {market_price_data}")
         logger.info(f"market price: {convert_to_number(market_price_data.price)}")
 
+    if DEPOSIT:
+        try:
+            #await drift_client.initialize_user()
+            await drift_client.deposit(1, 0)
+            logger.info(f"deposit of 100 successful")
+        except Exception as e:
+            logger.error(f"Error depositing: {str(e)}")
+            raise e
+
     # Ensure proper cleanup
     await drift_client.unsubscribe()
     await connection.close()
@@ -295,3 +308,72 @@ async def test_drift_api():
 
 if __name__ == "__main__":
     asyncio.run(test_drift_api())
+
+
+async def deposit_sol():
+    load_dotenv()
+    keypath = os.getenv("DRIFT_WALLET_PRIVATE_KEY")
+    url = os.getenv("RPC_URL")
+
+    if not keypath:
+        raise ValueError("DRIFT_WALLET_PRIVATE_KEY not set in environment variables")
+    if not url:
+        raise ValueError("RPC_URL not set in environment variables")
+    try:
+        with open(os.path.expanduser(keypath), "r") as f:
+            secret = json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Private key file not found at {keypath}")
+    except json.JSONDecodeError:
+        raise ValueError(f"Invalid JSON in private key file at {keypath}")
+
+    #keypair = load_keypair(secret)
+    keypair = Keypair.from_bytes(bytes(secret))
+    wallet = Wallet(keypair)
+
+    #logger.info(f"Using public key: {keypair.pubkey()}")
+    connection = AsyncClient(url)
+    bulk_account_loader = BulkAccountLoader(connection)
+
+    drift_client = DriftClient(
+        connection,
+        wallet,
+        "devnet", # using devnet 
+        tx_params=TxParams(600_000, 100),
+        account_subscription=AccountSubscriptionConfig("cached", bulk_account_loader=bulk_account_loader),
+        perp_market_indexes=[0],  # Assuming SOL-PERP is market index 0
+        spot_market_indexes=[1],  # Assuming SOL is spot market index 1
+    )
+
+    try:
+        await drift_client.add_user(0)
+        logger.info("Sub account 0 successfully added")
+    except Exception as e:
+        logger.error(f"Error subscribing to Drift client: {str(e)}")
+        raise e
+    try:
+        await drift_client.subscribe()
+        logger.info("Drift client subscribed successfully")
+    except Exception as e:
+        logger.error(f"Error subscribing to Drift client: {str(e)}")
+        raise e
+
+    # Get the SOL spot market index (usually 1 for SOL)
+    sol_spot_market_index = 1
+
+    # Get the user's associated token account for SOL
+    user_sol_account = drift_client.get_associated_token_account_public_key(sol_spot_market_index)
+
+
+    spot_market_index = 1 # SOL 
+    amount = drift_client.convert_to_spot_precision(3, spot_market_index) # $100
+
+    tx_sig = await drift_client.deposit(amount, spot_market_index, user_sol_account)
+
+    print(f"Deposit transaction signature: {tx_sig}")
+
+    await drift_client.unsubscribe()
+
+
+# if __name__ == "__main__":
+#     asyncio.run(deposit_sol())
