@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from decimal import Decimal
-import numpy as np
+import numpy as np 
+import aiohttp
 import requests
 import pandas as pd
 from io import StringIO
@@ -11,7 +12,6 @@ from driftpy.types import OrderType, OrderParams, PositionDirection, MarketType 
 from driftpy.constants.numeric_constants import BASE_PRECISION, PRICE_PRECISION # type: ignore
 from src.api.drift.api import DriftAPI
 from src.common.types import MarketAccountType, MarketMakerConfig, Bot, PositionType
-from typing import Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -35,6 +35,13 @@ class MarketMaker(Bot):
         
         self.inventory_extreme = Decimal('50')
         self.max_orders = 8
+        
+        self.vwap = None
+        self.last_price_update = 0
+        self.price_update_interval = 60  # Update price every 60 seconds
+        self.volatility = Decimal('0.01')  # Initial volatility estimate
+        self.volatility_window = 20  # Number of price updates to use for volatility calculation
+        self.price_history: List[Decimal] = []
         self.health_check_interval = 60
         self.last_health_check = 0
         self.is_healthy = True
@@ -78,11 +85,75 @@ class MarketMaker(Bot):
     
     def _generate_skew(self) -> float:
         """
-        Generate a base skew value from market features.
-        This is a placeholder and should be implemented based on your specific market features.
+        Generate a skew value based on current market conditions and inventory.
+        
+        :return: A float value between -1 and 1, where:
+                - Negative values indicate a bias towards selling
+                - Positive values indicate a bias towards buying
+                - 0 indicates a neutral stance
         """
-        # Implement your skew generation logic here
-        return 0.0  # Placeholder return
+        if self.last_trade_price is None or self.vwap is None:
+            logger.warning("Not enough data to generate skew. Returning neutral skew.")
+            return 0.0
+
+        # 1. Price trend component
+        price_trend = (self.last_trade_price - self.vwap) / self.vwap
+        price_skew = np.tanh(price_trend * 10)  # Scale and bound the trend
+
+        # 2. Inventory skew component
+        inventory_diff = self.position_size - self.config.inventory_target
+        max_inventory = self.config.max_position_size
+        inventory_skew = -np.tanh(inventory_diff / (max_inventory / 2))  # Negative because we want to reduce inventory
+
+        # 3. Order book imbalance component
+        bid_volume = sum(bid[1] for bid in self.order_book['bids'])
+        ask_volume = sum(ask[1] for ask in self.order_book['asks'])
+        if bid_volume + ask_volume > 0:
+            book_imbalance = (bid_volume - ask_volume) / (bid_volume + ask_volume)
+            book_skew = np.tanh(book_imbalance * 2)
+        else:
+            book_skew = 0
+
+        # Combine components with weights
+        total_skew = (
+            0.3 * price_skew +
+            0.5 * inventory_skew +
+            0.2 * book_skew
+        )
+
+        return float(total_skew)
+
+    async def update_vwap(self):
+        """Update the Volume Weighted Average Price (VWAP)."""
+        current_time = time.time()
+        if current_time - self.last_price_update < self.price_update_interval:
+            return
+
+        try:
+            if self.session is None:
+                self.session = aiohttp.ClientSession()
+            
+            url = 'https://drift-historical-data-v2.s3.eu-west-1.amazonaws.com/program/dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH/user/FrEFAwxdrzHxgc7S4cuFfsfLmcg8pfbxnkCQW83euyCS/tradeRecords/2024/20240929'
+            async with self.session.get(url) as response:
+                response.raise_for_status()
+                content = await response.text()
+            
+            df = pd.read_csv(StringIO(content))
+            df_filtered = df[df['marketIndex'] == self.market_index]
+            
+            if df_filtered.empty:
+                logger.warning(f"No data found for market index {self.market_index}")
+                return
+            
+            df_filtered['volume'] = df_filtered['price'] * df_filtered['size']
+            total_volume = df_filtered['volume'].sum()
+            self.vwap = df_filtered['volume'].sum() / df_filtered['size'].sum()
+            
+            self.last_price_update = current_time
+            logger.info(f"Updated VWAP: {self.vwap}")
+        except Exception as e:
+            logger.error(f"Error updating VWAP: {str(e)}")
+
 
     def _prices(self, bid_skew: float, ask_skew: float) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """
@@ -148,14 +219,67 @@ class MarketMaker(Bot):
             num=self.max_orders // 2
         )
 
-        return bid_sizes, ask_sizes
-
+        return bid_sizes, ask_sizes 
+    
     def _adjusted_spread(self) -> Decimal:
         """
-        Adjusts the base spread of orders based on current market volatility.
+        Calculate an adjusted spread based on market conditions and risk factors.
+        
+        :return: Adjusted spread as a Decimal
         """
-        # Implement your spread adjustment logic here
-        return self.config.base_spread  # Placeholder return
+        base_spread = self.config.base_spread
+
+        # 1. Volatility adjustment
+        volatility_factor = Decimal('1') + (self.volatility / Decimal('0.01'))  # Increase spread by 1% for each 1% of volatility
+        
+        # 2. Inventory risk adjustment
+        inventory_diff = abs(self.position_size - self.config.inventory_target)
+        max_inventory = self.config.max_position_size
+        inventory_factor = Decimal('1') + (inventory_diff / max_inventory) * Decimal('0.5')  # Max 50% increase for full inventory
+
+        # 3. Market depth adjustment
+        if self.order_book['bids'] and self.order_book['asks']:
+            bid_volume = sum(bid[1] for bid in self.order_book['bids'][:5])  # Sum volume of top 5 bids
+            ask_volume = sum(ask[1] for ask in self.order_book['asks'][:5])  # Sum volume of top 5 asks
+            avg_volume = (bid_volume + ask_volume) / 2
+            depth_factor = Decimal('1') + (Decimal('100') / (avg_volume + Decimal('1')))  # Increase spread for low liquidity
+        else:
+            depth_factor = Decimal('1.5')  # Default to 50% increase if order book is empty
+
+        # 4. Time-based adjustment (wider spreads during expected volatile periods)
+        current_time = time.localtime()
+        if current_time.tm_hour in [14, 15, 16]:  # Assuming market opens at 14:00 UTC
+            time_factor = Decimal('1.2')  # 20% wider spreads during first 3 hours of trading
+        elif current_time.tm_hour in [21, 22]:  # Assuming market closes at 23:00 UTC
+            time_factor = Decimal('1.1')  # 10% wider spreads during last 2 hours of trading
+        else:
+            time_factor = Decimal('1')
+
+        # Combine all factors
+        adjusted_spread = base_spread * volatility_factor * inventory_factor * depth_factor * time_factor
+
+        # Apply minimum and maximum spread limits
+        min_spread = self.config.base_spread / 2
+        max_spread = self.config.base_spread * 5
+        adjusted_spread = max(min_spread, min(adjusted_spread, max_spread))
+
+        logger.info(f"Adjusted spread: {adjusted_spread}")
+        return adjusted_spread
+
+    async def update_volatility(self):
+        """Update the volatility estimate based on recent price history."""
+        if self.last_trade_price is None:
+            return
+
+        self.price_history.append(self.last_trade_price)
+        if len(self.price_history) > self.volatility_window:
+            self.price_history.pop(0)
+
+        if len(self.price_history) >= 2:
+            returns = [float(price / self.price_history[i - 1] - 1) for i, price in enumerate(self.price_history) if i > 0]
+            self.volatility = Decimal(str(np.std(returns) * np.sqrt(len(returns))))
+            logger.info(f"Updated volatility estimate: {self.volatility}")
+            
 
     async def generate_quotes(self) -> List[Tuple[str, float, float]]:
         """
@@ -255,11 +379,12 @@ class MarketMaker(Bot):
 
                 await self.update_order_book()
                 await self.update_position()
+                await self.update_vwap()
                 await self.manage_inventory()
                 await self.place_orders()
                 
                 # Update last trade price
-                market = self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
+                market = await self.drift_api.get_market_price_data(self.market_index, self.config.market_type)
                 self.last_trade_price = Decimal(str(market.price)) / PRICE_PRECISION
                 
                 await asyncio.sleep(interval_ms / 1000)
