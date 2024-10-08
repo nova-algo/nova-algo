@@ -1,34 +1,42 @@
-import WalletConnectModal from "@/components/WalletConnectModal";
-import localFont from "next/font/local";
+import { AnimatedSVG } from "@/components/AnimatedLogo";
+import Homepage from "@/components/Homepage";
+import { Box } from "@chakra-ui/react";
+import Head from "next/head";
 import { useEffect, useState } from "react";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
 export default function Home() {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    setIsReady(true);
+    const tid = setTimeout(() => {
+      setIsReady(true);
+    }, 800);
+    return () => {
+      tid && clearTimeout(tid);
+    };
   }, []);
-  if (!isReady) return <div>Loading...</div>;
+  if (!isReady)
+    return (
+      <Box
+        w={"100vw"}
+        h={"100vh"}
+        display={"flex"}
+        justifyContent={"center"}
+        alignItems={"center"}
+      >
+        <AnimatedSVG />
+      </Box>
+    );
   return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <WalletConnectModal
-        title="Connect Wallet"
-        accountCallback={(account) => {
-          console.log(account);
-        }}
-      />
-    </div>
+    <>
+      <Head>
+        <title>Nova Algo | Advanced Trading Vaults For Everyone</title>
+        <meta
+          name="description"
+          content=" Nova Algo is an Advanced Trading App built for Everyone, Trade like a pro with Nova Algo"
+        />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <Homepage />
+    </>
   );
 }
