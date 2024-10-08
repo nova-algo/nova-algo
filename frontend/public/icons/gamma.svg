@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="#4A5568" />
+  
+  <!-- Vault door -->
+  <rect x="40" y="40" width="120" height="120" rx="10" ry="10" fill="#2D3748" />
+  
+  <!-- Vault handle -->
+  <circle cx="140" cy="100" r="15" fill="#A0AEC0" />
+  <circle cx="140" cy="100" r="10" fill="#2D3748" />
+  
+  <!-- Gamma symbol -->
+  <path d="M70 60 Q100 60 100 90 L100 140" stroke="#ED8936" stroke-width="12" fill="none" />
+  <path d="M130 60 L70 60" stroke="#ED8936" stroke-width="12" fill="none" stroke-linecap="round" />
+</svg>

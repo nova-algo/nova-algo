@@ -73,7 +73,7 @@ const VaultCard: React.FC<{ vault: Vault }> = ({ vault }) => {
       <Box p={6} display="flex" flexDirection="column" height="100%">
         <VStack align="start" spacing={3} flex="1">
           <HStack>
-            <Avatar size="md" src="https://bit.ly/dan-abramov" />
+            <Avatar size="md" src={vault?.avatar} />
             <Heading as="h3" size="lg" color={textColor}>
               {vault.name}
             </Heading>

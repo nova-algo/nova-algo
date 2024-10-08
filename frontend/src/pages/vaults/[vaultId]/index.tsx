@@ -72,7 +72,7 @@ export default function VaultPage() {
   const vaultPerformanceData = {
     "Total Earnings (All Time)": "$2,903,690.85",
     "Cumulative Return": "40.65%",
-    APY: "0.95%",
+    APY: "104%",
     "Max Daily Drawdown": "-0.87%",
     "30D Volume": "$250,698,411.18",
   };
