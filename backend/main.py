@@ -3,7 +3,7 @@ from decimal import Decimal
 import logging
 from src.api.drift.api import DriftAPI
 from src.strategy.factory import StrategyFactory
-from src.api.drift.error import DriftAPIRequestError
+# from src.api.drift.error import DriftAPIRequestError
 from src.common.types import BollingerBandsConfig, TrendFollowingConfig
 from driftpy.types import MarketType
 
@@ -50,7 +50,6 @@ STRATEGY_CONFIG = TrendFollowingConfig(
     position_size=Decimal('0.75')
 )
 
-@DriftAPIRequestError
 async def run_strategy():
     # Initialize DriftAPI
     drift_api = DriftAPI()
