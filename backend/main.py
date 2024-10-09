@@ -2,7 +2,7 @@ import asyncio
 import logging
 from src.api.drift.api import DriftAPI
 from src.strategy.factory import StrategyFactory
-from src.api.drift.error import DriftAPIRequestError
+# from src.api.drift.error import DriftAPIRequestError
 from src.common.types import BollingerBandsConfig
 from driftpy.types import MarketType
 
@@ -29,7 +29,6 @@ STRATEGY_CONFIG = BollingerBandsConfig(
     target_profit=5.0
 )
 
-@DriftAPIRequestError
 async def run_strategy():
     # Initialize DriftAPI
     drift_api = DriftAPI()
