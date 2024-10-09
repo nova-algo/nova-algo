@@ -208,6 +208,18 @@ async def test_drift_api():
         account_subscription=AccountSubscriptionConfig("polling", bulk_account_loader=bulk_account_loader)
     )
 
+    # drift_client = DriftClient(
+    #     connection,
+    #     wallet,
+    #     "mainnet",
+    #     account_subscription=AccountSubscriptionConfig("websocket"),
+    #     tx_params=TxParams(300_000, 100_000),
+    #     active_sub_account_id=sub_account_id,
+    # )
+
+    #await drift_client.add_user(sub_account_id)
+    #await drift_client.subscribe()
+
     try:
         await drift_client.add_user(0)
         logger.info("Sub account 0 successfully added")
@@ -305,10 +317,8 @@ async def test_drift_api():
     await drift_client.unsubscribe()
     await connection.close()
 
-
-if __name__ == "__main__":
-    asyncio.run(test_drift_api())
-
+# if __name__ == "__main__":
+#     asyncio.run(test_drift_api())
 
 async def deposit_sol():
     load_dotenv()
@@ -360,7 +370,8 @@ async def deposit_sol():
 
     # Get the SOL spot market index (usually 1 for SOL)
     sol_spot_market_index = 1
-
+    pubkey_string = "FVfT5LovFNye8qWKDQJUbVddkaPZPj18WaqxmcfbueaR"
+    pubkey = Pubkey.from_string(pubkey_string)
     # Get the user's associated token account for SOL
     user_sol_account = drift_client.get_associated_token_account_public_key(sol_spot_market_index)
 
@@ -368,12 +379,12 @@ async def deposit_sol():
     spot_market_index = 1 # SOL 
     amount = drift_client.convert_to_spot_precision(3, spot_market_index) # $100
 
-    tx_sig = await drift_client.deposit(amount, spot_market_index, user_sol_account)
+    tx_sig = await drift_client.deposit(amount, spot_market_index, pubkey)
 
     print(f"Deposit transaction signature: {tx_sig}")
 
     await drift_client.unsubscribe()
 
 
-# if __name__ == "__main__":
-#     asyncio.run(deposit_sol())
+if __name__ == "__main__":
+    asyncio.run(deposit_sol())

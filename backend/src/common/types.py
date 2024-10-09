@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import List, Optional, Union
 from dataclasses import dataclass
 from driftpy.types import MarketType, PerpPosition, SpotPosition, PerpMarketAccount, SpotMarketAccount
 from driftpy.dlob.dlob_node import DLOBNode  
@@ -73,14 +73,33 @@ class BollingerBandsConfig(BotConfig):
     # timeframe: str
 
 
+# @dataclass
+# class TrendFollowingConfig(BotConfig):
+#     # market_indexes: list[int]
+#     # sub_accounts: list[int]
+#     # market_type: MarketType
+#     target_leverage: float = 1.0
+#     spread: float = 0.0
+
+
 @dataclass
 class TrendFollowingConfig(BotConfig):
-    # market_indexes: list[int]
-    # sub_accounts: list[int]
-    # market_type: MarketType
+    exhaustion_swing_length: int = 40
+    smoothing_factor: int = 5
+    threshold_multiplier: float = 1.5
+    atr_length: int = 14
+    alma_offset: float = 0.85
+    alma_sigma: float = 6
+    pyramiding: int = 5
+    position_size: Decimal
     target_leverage: float = 1.0
-    spread: float = 0.0
-
+    symbol: str
+    market_indexes: list[int]
+    market_type: MarketType
+    polling_interval: int = 60000  # in milliseconds
+    timeframe: str
+    start_date: str
+    end_date: str
 
 # @dataclass
 # class PerpFillerConfig(BotConfig):
