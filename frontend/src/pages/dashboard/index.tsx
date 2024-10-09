@@ -81,6 +81,7 @@ const UserDashboard = () => {
     address,
     isAuthenticated,
     balanceInUSD,
+    balanceSymbol,
   } = useAppContext();
   const [canLoad, setCanLoad] = useState(false);
   const { data: session } = useNextAuthSession();
@@ -246,7 +247,16 @@ const UserDashboard = () => {
               <StatCard
                 icon={LuWallet}
                 title="Total Balance"
-                value={"$" + balanceInUSD}
+                value={
+                  <>
+                    <HStack>
+                      <Text>${balanceInUSD}</Text>
+                      <Text fontSize={"smaller"}>
+                        ({balanceSymbol}:{balance.substring(0, 6)})
+                      </Text>
+                    </HStack>
+                  </>
+                }
               >
                 <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
                   <Button
@@ -301,17 +311,17 @@ const UserDashboard = () => {
                 </Heading>
                 <VStack align="stretch" spacing={4}>
                   <VaultItem
-                    name="Growth Fund"
+                    name="Drifting Tiger"
                     balance="$5,000"
                     profit="+12.3%"
                   />
                   <VaultItem
-                    name="Tech Innovators"
+                    name="Bonking Dragon"
                     balance="$3,000"
                     profit="+8.7%"
                   />
                   <VaultItem
-                    name="Green Energy"
+                    name="Gamma Vault"
                     balance="$2,245"
                     profit="+5.2%"
                   />
@@ -325,17 +335,17 @@ const UserDashboard = () => {
                   <TransactionItem
                     type="Deposit"
                     amount="$1,000"
-                    date="2023-06-01"
+                    date="2024-10-01"
                   />
                   <TransactionItem
                     type="Withdrawal"
                     amount="$500"
-                    date="2023-05-28"
+                    date="2024-09-28"
                   />
                   <TransactionItem
                     type="Deposit"
                     amount="$2,000"
-                    date="2023-05-15"
+                    date="2024-09-15"
                   />
                 </VStack>
               </Box>
@@ -481,7 +491,6 @@ const SidebarItem = ({
   const router = useRouter();
 
   const pathname = router.pathname;
-  console.log({ pathname });
 
   const active = "/" + label?.toLowerCase() === pathname?.toLowerCase();
   return (
@@ -506,7 +515,7 @@ const StatCard = ({
 }: {
   icon: IconType;
   title: string;
-  value: string;
+  value: string | ReactNode;
   children?: ReactNode;
 }) => (
   <HStack p={6} borderWidth={1} borderRadius="lg" spacing={4}>
