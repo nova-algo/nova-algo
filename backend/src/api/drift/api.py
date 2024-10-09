@@ -39,6 +39,7 @@ from driftpy.types import (
     Order,
     ModifyOrderParams, 
     OraclePriceData,
+    TxParams
 )
 from driftpy.drift_client import DriftClient
 from driftpy.math.perp_position import calculate_entry_price
@@ -130,6 +131,7 @@ class DriftAPI:
             self.connection,
             wallet,
             self.env,
+            tx_params=TxParams(600_000, 100),
             account_subscription=AccountSubscriptionConfig(subscription_type, bulk_account_loader=bulk_account_loader),
         )
         

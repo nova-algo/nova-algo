@@ -1,9 +1,10 @@
 import asyncio
+from decimal import Decimal
 import logging
 from src.api.drift.api import DriftAPI
 from src.strategy.factory import StrategyFactory
-from src.api.drift.error import DriftAPIRequestError
-from src.common.types import BollingerBandsConfig
+#from src.api.drift.error import DriftAPIRequestError
+from src.common.types import BollingerBandsConfig, TrendFollowingConfig
 from driftpy.types import MarketType
 
 # Set up logging
@@ -29,7 +30,27 @@ STRATEGY_CONFIG = BollingerBandsConfig(
     target_profit=5.0
 )
 
-@DriftAPIRequestError
+STRATEGY_CONFIG = TrendFollowingConfig(
+    bot_id="trend_following_1",
+    strategy_type="trend_following",
+    market_indexes=[0],  # Assuming 0 is the market index for SOL-PERP
+    sub_accounts=[0],
+    market_type=MarketType.Perp(),
+    symbol="SOL-PERP",
+    timeframe="15m",
+    target_leverage=2.0,
+    spread=0.001,
+    exhaustion_swing_length=40,
+    smoothing_factor=5,
+    threshold_multiplier=1.5,
+    atr_length=14,
+    alma_offset=0.85,
+    alma_sigma=6,
+    pyramiding=5,
+    position_size=Decimal('0.75')
+)
+
+#@DriftAPIRequestError
 async def run_strategy():
     # Initialize DriftAPI
     drift_api = DriftAPI()
