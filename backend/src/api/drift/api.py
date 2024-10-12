@@ -61,10 +61,10 @@ from driftpy.math.perp_position import (
 )
 from driftpy.keypair import load_keypair
 from src.common.types import MarketAccountType, PositionType
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
 from solana.rpc import commitment
 import pprint
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 class DriftAPI:
     """

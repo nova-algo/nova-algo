@@ -41,6 +41,7 @@ class TrendFollowingStrategy(Bot):
         self.drift_api = drift_api
         self.config = config
         self.market_index = self.config.market_indexes[0]
+        #self.historical_data = self.update_historical_data("SOLPERP", self.config.timeframe, self.config.start_date, self.config.end_date)
         self.historical_data = pd.DataFrame()
         self.is_initialized = False
 
@@ -53,65 +54,94 @@ class TrendFollowingStrategy(Bot):
         self.alma_sigma = self.config.alma_sigma
         self.pyramiding = self.config.pyramiding
         
-        self.alma = (self.alma_calc, self.historical_data['Close'], self.exhaustion_swing_length, self.alma_offset, self.alma_sigma)
-        self.smoothed_alma = (lambda x: pd.Series(x).rolling(self.smoothing_factor).mean(), self.alma)
-        self.atr = (lambda x: pd.Series(x).rolling(self.atr_length).mean(), self.historical_data["TR"])
-        self.dynamic_threshold = (lambda x: pd.Series(x) * self.threshold_multiplier, self.atr)
-        self.upper_band = (lambda x, y: pd.Series(x) + pd.Series(y).rolling(self.exhaustion_swing_length).std() * 1.5, self.smoothed_alma, self.historical_data['Close'])
-        self.lower_band = (lambda x, y: pd.Series(x) - pd.Series(y).rolling(self.exhaustion_swing_length).std() * 1.5, self.smoothed_alma, self.historical_data['Close'])
+        # self.alma = (self.alma_calc, self.historical_data['Close'], self.exhaustion_swing_length, self.alma_offset, self.alma_sigma)
+        # self.smoothed_alma = (lambda x: pd.Series(x).rolling(self.smoothing_factor).mean(), self.alma)
+        # self.atr = (lambda x: pd.Series(x).rolling(self.atr_length).mean(), self.historical_data["TR"])
+        # self.dynamic_threshold = (lambda x: pd.Series(x) * self.threshold_multiplier, self.atr)
+        # self.upper_band = (lambda x, y: pd.Series(x) + pd.Series(y).rolling(self.exhaustion_swing_length).std() * 1.5, self.smoothed_alma, self.historical_data['Close'])
+        # self.lower_band = (lambda x, y: pd.Series(x) - pd.Series(y).rolling(self.exhaustion_swing_length).std() * 1.5, self.smoothed_alma, self.historical_data['Close'])
 
-        # # These should be calculated after historical data is available
-        # self.alma = None
-        # self.smoothed_alma = None
-        # self.atr = None
-        # self.dynamic_threshold = None
-        # self.upper_band = None
-        # self.lower_band = None
+        # These should be calculated after historical data is available
+        self.alma = None
+        self.smoothed_alma = None
+        self.atr = None
+        self.dynamic_threshold = None
+        self.upper_band = None
+        self.lower_band = None
 
-    async def initialize(self):
+    async def init(self):
         logger.info(f"Initializing TrendFollowingStrategy for {self.config.symbol}")
-        self.historical_data = await self.update_historical_data(self.config.symbol, self.config.timeframe, self.config.start_date, self.config.end_date)
-        self.update_indicators()
-        self.is_initialized = True
+        try:
+            self.historical_data = await self.update_historical_data(self.config.symbol, self.config.timeframe, self.config.start_date, self.config.end_date)
+            
+            if self.historical_data is None or self.historical_data.empty:
+                logger.error("Failed to fetch historical data")
+                return
+            
+            logger.info(f"Historical data shape: {self.historical_data.shape}")
+            logger.info(f"Historical data columns: {self.historical_data.columns}")
+            
+            if 'Close' not in self.historical_data.columns:
+                logger.error(f"'Close' column not found in historical data. Available columns: {self.historical_data.columns}")
+                return
+            
+            self.update_indicators()
+            self.is_initialized = True
+            logger.info("TrendFollowingStrategy initialized successfully")
+        except Exception as e:
+            logger.error(f"Error during initialization: {str(e)}", exc_info=True)
         
     def update_indicators(self):
-        self.alma = self.alma_calc(self.historical_data['Close'], self.exhaustion_swing_length, self.alma_offset, self.alma_sigma)
-        self.smoothed_alma = self.alma.rolling(self.smoothing_factor).mean()
-        self.atr = self.historical_data['TR'].rolling(self.atr_length).mean()
-        self.dynamic_threshold = self.atr * self.threshold_multiplier
-        self.upper_band = self.smoothed_alma + self.historical_data['Close'].rolling(self.exhaustion_swing_length).std() * 1.5
-        self.lower_band = self.smoothed_alma - self.historical_data['Close'].rolling(self.exhaustion_swing_length).std() * 1.5 
+        if not self.historical_data.empty:
+            self.alma = self.alma_calc(self.historical_data['Close'], self.exhaustion_swing_length, self.alma_offset, self.alma_sigma)
+            self.smoothed_alma = self.alma.rolling(self.smoothing_factor).mean()
+            self.atr = self.historical_data['TR'].rolling(self.atr_length).mean()
+            self.dynamic_threshold = self.atr * self.threshold_multiplier
+            self.upper_band = self.smoothed_alma + self.historical_data['Close'].rolling(self.exhaustion_swing_length).std() * 1.5
+            self.lower_band = self.smoothed_alma - self.historical_data['Close'].rolling(self.exhaustion_swing_length).std() * 1.5 
 
     # Fetch historical data from Bybit (or another exchange, if you like)
-    def update_historical_data(self, symbol, timeframe, start_date, end_date):
-        exchange = ccxt.bybit({'enableRateLimit': True})
-        
-        timeframe_seconds = {
-            '1m': 60, '5m': 300, '15m': 900, '30m': 1800,
-            '1h': 3600, '4h': 14400, '1d': 86400
-        }
-        
-        all_ohlcv = []
-        current_date = pd.Timestamp(start_date).tz_localize(None)
-        end_datetime = pd.Timestamp(end_date).tz_localize(None)
-        
-        while current_date < end_datetime:
-            try:
-                ohlcv = exchange.fetch_ohlcv(symbol, timeframe, exchange.parse8601(current_date.isoformat()), limit=1000)
-                all_ohlcv.extend(ohlcv)
-                if len(ohlcv):
-                    current_date = pd.Timestamp(ohlcv[-1][0], unit='ms') + pd.Timedelta(seconds=timeframe_seconds[timeframe])
-                else:
-                    current_date += pd.Timedelta(days=1)
-            except Exception as e:
-                print(f"Error fetching data for {symbol}: {e}")
-                break
-        
-        df = pd.DataFrame(all_ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-        df = df.set_index('Timestamp')
-        df['TR'] = self.calculate_true_range(df)
-        return df
+    async def update_historical_data(self, symbol, timeframe, start_date, end_date):
+        try:
+            exchange = ccxt.bybit({'enableRateLimit': True})
+            
+            timeframe_seconds = {
+                '1m': 60, '5m': 300, '15m': 900, '30m': 1800,
+                '1h': 3600, '4h': 14400, '1d': 86400
+            }
+            
+            all_ohlcv = []
+            current_date = pd.Timestamp(start_date).tz_localize(None)
+            end_datetime = pd.Timestamp(end_date).tz_localize(None)
+            
+            while current_date < end_datetime:
+                try:
+                    ohlcv = exchange.fetch_ohlcv(symbol, timeframe, exchange.parse8601(current_date.isoformat()), limit=1000)
+                    all_ohlcv.extend(ohlcv)
+                    if len(ohlcv):
+                        current_date = pd.Timestamp(ohlcv[-1][0], unit='ms') + pd.Timedelta(seconds=timeframe_seconds[timeframe])
+                    else:
+                        current_date += pd.Timedelta(days=1)
+                except Exception as e:
+                    logger.error(f"Error fetching data for {symbol}: {e}")
+                    break
+            
+            if not all_ohlcv:
+                logger.error("No historical data fetched")
+                return None
+            
+            df = pd.DataFrame(all_ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
+            df = df.set_index('Timestamp')
+            df['TR'] = self.calculate_true_range(df)
+            
+            logger.info(f"Fetched historical data shape: {df.shape}")
+            logger.info(f"Fetched historical data columns: {df.columns}")
+            
+            return df
+        except Exception as e:
+            logger.error(f"Error in update_historical_data: {str(e)}", exc_info=True)
+            return None
 
     def alma_calc(self, price, window, offset, sigma):
         m = np.floor(offset * (window - 1))
@@ -155,14 +185,25 @@ class TrendFollowingStrategy(Bot):
         await self.update_historical_data(self.config.symbol, self.config.timeframe, self.config.start_date, self.config.end_date)
         self.update_indicators()
         
-        current_price = self.historical_data['close'].iloc[-1]
-        smoothed_alma = self.historical_data['smoothed_alma'].iloc[-1]
-        dynamic_threshold = self.historical_data['dynamic_threshold'].iloc[-1]
+        current_price = self.historical_data['Close'].iloc[-1]
+        if self.smoothed_alma is None or len(self.smoothed_alma) == 0:
+            logger.error("smoothed_alma is None or empty")
+            return  # or handle this case appropriately
+
+        if self.dynamic_threshold is None or len(self.dynamic_threshold) == 0:
+            logger.error("dynamic_threshold is None or empty")
+            return  # or handle this case appropriately
+
+        smoothed_alma = self.smoothed_alma.iloc[-1]
+        dynamic_threshold = self.dynamic_threshold.iloc[-1]
+
+        logger.info(f"Latest smoothed_alma: {smoothed_alma}, type: {type(smoothed_alma)}")
+        logger.info(f"Latest dynamic_threshold: {dynamic_threshold}, type: {type(dynamic_threshold)}")
 
         buy_signal = current_price > smoothed_alma + dynamic_threshold
         sell_signal = current_price < smoothed_alma - dynamic_threshold
 
-        position: PositionType = await self.drift_api.get_position(self.market_index)
+        position: PositionType = self.drift_api.get_position(self.market_index, self.config.market_type)
         current_position_size = Decimal(position.base_asset_amount) / BASE_PRECISION if position else Decimal('0')
 
         user = self.drift_api.drift_client.get_user()
@@ -265,7 +306,7 @@ class TrendFollowingStrategy(Bot):
             try:
                 await self.drift_api.cancel_all_orders()
                 
-                position: PositionType = await self.drift_api.get_position(self.market_index, self.config.market_type)
+                position: PositionType = self.drift_api.get_position(self.market_index, self.config.market_type)
                 if position and position.base_asset_amount != 0:
                     await self.close_position()
                 
@@ -283,7 +324,7 @@ class TrendFollowingStrategy(Bot):
                 self.is_initialized = False
                 
                 logger.info("Strategy reset complete. Re-initializing...")
-                await self.initialize()
+                await self.init()
                 return
             except Exception as e:
                 logger.error(f"Reset attempt {attempt + 1} failed: {e}")
@@ -337,7 +378,7 @@ class TrendFollowingStrategy(Bot):
     async def health_check(self):
         try:
             user = self.drift_api.drift_client.get_user()
-            health = await user.get_health()
+            health = user.get_health()
             
             # Define a minimum health threshold (e.g., 20%)
             MIN_HEALTH_THRESHOLD = 20
