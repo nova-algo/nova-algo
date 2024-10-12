@@ -1,34 +1,32 @@
+# Import these libraries
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+#from mplfinance.original_flavor import candlestick_ohlc
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
 import ccxt
-from datetime import datetime, timedelta
 
+# Strategy Class Definition
 class EnhancedALMAStrategy(Strategy):
+    # Params
     exhaustion_swing_length = 40
     smoothing_factor = 5
     threshold_multiplier = 1.5
     atr_length = 14
-    risk_per_trade_percent = 10
     alma_offset = 0.85
     alma_sigma = 6
     pyramiding = 5
-
+    
     def init(self):
+        # Indicator setup + other extras
         self.alma = self.I(self.alma_calc, self.data.Close, self.exhaustion_swing_length, self.alma_offset, self.alma_sigma)
-        
-        # Apply rolling mean directly to the output of alma_calc
         self.smoothed_alma = self.I(lambda x: pd.Series(x).rolling(self.smoothing_factor).mean(), self.alma)
-        
         self.atr = self.I(lambda x: pd.Series(x).rolling(self.atr_length).mean(), self.data.TR)
         self.dynamic_threshold = self.I(lambda x: pd.Series(x) * self.threshold_multiplier, self.atr)
-        
         self.upper_band = self.I(lambda x, y: pd.Series(x) + pd.Series(y).rolling(self.exhaustion_swing_length).std() * 1.5, self.smoothed_alma, self.data.Close)
         self.lower_band = self.I(lambda x, y: pd.Series(x) - pd.Series(y).rolling(self.exhaustion_swing_length).std() * 1.5, self.smoothed_alma, self.data.Close)
-        
-        self.resistance_level = self.I(self.calculate_resistance, self.data.Close, self.upper_band)
-        self.support_level = self.I(self.calculate_support, self.data.Close, self.lower_band)
 
     def alma_calc(self, price, window, offset, sigma):
         m = np.floor(offset * (window - 1))
@@ -41,35 +39,43 @@ class EnhancedALMAStrategy(Strategy):
 
         return pd.Series(price).rolling(window).apply(alma, raw=True)
 
-    def calculate_resistance(self, close, upper_band):
-        resistance = np.where(crossover(close, upper_band), close, np.nan)
-        return pd.Series(resistance).fillna(method='ffill')
-
-    def calculate_support(self, close, lower_band):
-        support = np.where(crossover(lower_band, close), close, np.nan)
-        return pd.Series(support).fillna(method='ffill')
-
     def next(self):
         price = self.data.Close[-1]
         
+        # This is just to shorten the code and make it readable
+        buy_condition = crossover(self.data.Close, self.smoothed_alma + self.dynamic_threshold)
+        sell_condition = crossover(self.smoothed_alma - self.dynamic_threshold, self.data.Close)
+        
+        position_size = self.position.size
+
+        position_size = self.position.size
+
+        px_size = 0.75 # Never change it past 0.75 or you will go -ve
+
         if len(self.trades) >= self.pyramiding:
             return
         
-        position_size = self.position.size
-        
-        if crossover(self.data.Close, self.smoothed_alma + self.dynamic_threshold):
+        if buy_condition:
             if position_size < 1:
                 self.position.close()
-            self.buy(size=0.1)
-        
-        elif crossover(self.smoothed_alma - self.dynamic_threshold, self.data.Close):
+            self.buy(size=px_size)
+        elif sell_condition:
             if position_size > 1:
                 self.position.close()
-            self.sell(size=0.1)
+            self.sell(size=px_size)
 
-    def position_size(self):
-        return (self.equity * (self.risk_per_trade_percent / 100)) # / self.atr[-1]
-    
+        # if buy_condition:
+        #     if self.position.is_short:
+        #         self.position.close()
+        #     if not self.position.is_long:
+        #         self.buy(size=px_size)
+        # elif sell_condition:
+        #     if self.position.is_long:
+        #         self.position.close()
+        #     if not self.position.is_short:
+        #         self.sell(size=px_size)
+
+# Function to calculate True Range (used in ATR)
 def calculate_true_range(df):
     df['Previous Close'] = df['Close'].shift(1)
     df['High-Low'] = df['High'] - df['Low']
@@ -78,8 +84,18 @@ def calculate_true_range(df):
     df['TR'] = df[['High-Low', 'High-PrevClose', 'Low-PrevClose']].max(axis=1)
     return df['TR']
 
+# Function to calculate volatility (standard deviation of returns)
+# It isn't required in the grand scheme but it is a nice to have
+def calculate_volatility(df, window=14):
+    df['Returns'] = df['Close'].pct_change()
+    df['Volatility'] = df['Returns'].rolling(window).std()
+    # Return the rolling standard deviation of returns
+    
+    return df['Volatility']
+
+# Fetch historical data from Bybit (or another exchange, if you like)
 def fetch_data(symbol, timeframe, start_date, end_date):
-    exchange = ccxt.bybit({'enableRateLimit': True})
+    exchange = ccxt.binance()
     
     timeframe_seconds = {
         '1m': 60, '5m': 300, '15m': 900, '30m': 1800,
@@ -99,31 +115,67 @@ def fetch_data(symbol, timeframe, start_date, end_date):
             else:
                 current_date += pd.Timedelta(days=1)
         except Exception as e:
-            print(f"Error fetching data: {e}")
+            print(f"Error fetching data for {symbol}: {e}")
             break
     
     df = pd.DataFrame(all_ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-    # print("before datetime\n", df)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
     df = df.set_index('Timestamp')
     df['TR'] = calculate_true_range(df)
-    df.index = pd.to_datetime(df.index)
-    #print("timestamp df\n", df)
-    # df = df[(df.index >= pd.Timestamp(start_date)) & (df.index <= pd.Timestamp(end_date))]
-    #print('start to end time\n', df)
     return df
 
-def run_backtest(df):
+# Function to run the backtest and plot the results
+def run_backtest(df, symbol):
     bt = Backtest(df, EnhancedALMAStrategy, cash=100000, commission=.002)
     stats = bt.run()
-    print(stats)
-    #bt.plot()
-
-if __name__ == "__main__":
-    symbol = 'SOLPERP'
-    timeframe = '15m'
-    start_date = '2023-01-01T00:00:00Z'
-    end_date = '2024-09-30T00:00:00Z'
     
-    df = fetch_data(symbol, timeframe, start_date, end_date)
-    run_backtest(df)
+    # Print the stats to check available keys
+    # print(f"Stats for {symbol}:")
+    print(stats)  # This will show you all the keys available in the stats dictionary
+
+    # Calculate % return from day 1 to the final day
+    initial_equity = stats['_equity_curve']['Equity'][0]
+    final_equity = stats['_equity_curve']['Equity'][-1]
+    total_return = (final_equity - initial_equity) / initial_equity * 100
+    print(f"Total Return for {symbol}: {total_return:.2f}%")
+    
+    # Store results in a dictionary
+    result = {
+        'Symbol': symbol,
+        'Total Return (%)': total_return,
+        'Final Equity ($)': final_equity,
+        'Initial Equity ($)': initial_equity,
+        'Sharpe Ratio': stats['Sharpe Ratio'],
+        'Buy and Hold Return (%)': stats['Buy & Hold Return [%]'],
+        'Number of Trades': stats['# Trades'] if '# Trades' in stats else None,
+        'Win Rate (%)': stats['Win Rate [%]'] if 'Win Rate [%]' in stats else None,
+        'Max Drawdown (%)': stats['Max. Drawdown [%]'] if 'Max. Drawdown [%]' in stats else None
+    }
+    
+    return result  # Return the result for each symbol
+
+# Main function to execute the script
+if __name__ == "__main__":
+    symbols = ['SOLPERP', 'SOLUSDT']  # List of symbols to backtest
+    timeframe = '15m' # You can change this time frame
+    start_date = '2024-01-01T00:00:00Z' # You can also change this
+    end_date = '2024-10-01T00:00:00Z' # And this
+
+    results = []  # List to store results for each symbol
+
+    for symbol in symbols: # Loop through each symbol and return the value into the results list
+        df = fetch_data(symbol, timeframe, start_date, end_date)
+        
+        # Add ATR and Volatility to the dataframe
+        df['ATR'] = calculate_true_range(df).rolling(14).mean()
+        df['Volatility'] = calculate_volatility(df)
+        
+        
+        # Run the backtest and store the results for each symbol
+        result = run_backtest(df, symbol)
+        results.append(result)  # Append the result to the list
+        
+
+    # Convert results to a DataFrame and display
+    results_df = pd.DataFrame(results)
+    print(results_df)

@@ -1,12 +1,12 @@
 # Nova Algo x Radar Hackathon
 
-<!-- Video Demo - [Demo video](https://www.loom.com/share/38af2c5c8a8e46c29e16e316099dcee1) <br />
-Live Link - [Enigma-Protocol dapp](https://enigma-protocol.vercel.app/) <br />
-Pitch Deck - [Figma slides](https://www.figma.com/proto/diEzJsJcpkEzwZfWfRqULh/Enigma-Protocol?node-id=1-205&t=PWgmft5uE7HVKyqy-1&scaling=contain&content-scaling=fixed&page-id=0%3A1) <br/> -->
+Video Demo - [Demo video](https://www.loom.com/share/8bdfc99d6cac49f9ae06746fe3b6fa8d) <br />
+Live Link - [Nova Algo dapp](https://novaalgo.xyz/) <br />
+Pitch Deck - [Figma slides](https://www.figma.com/proto/diEzJsJcpkEzwZfWfRqULh/Nova-Algo?node-id=1-102&t=5gDSMVrDudbXq7Zd-1&scaling=contain&content-scaling=fixed) <br/>
 
 ## ✨ Description
 
-[Nova Algo](https://enigma-protocol.vercel.app/) is an algorithmic trading protocol for solana. It brings professional-grade quant finance trading algorithms and tools to retail on Solana. It trades on the Drift protocol DEX. We employed active yield vaults where users can pool in their USDC, BONK into the vault pools, and earn real yield from our algorithmic strategies which are connected to these vaults and running 24/7 under close monitoring.
+[Nova Algo](https://novaalgo.xyz/) is an algorithmic trading protocol for solana. It brings professional-grade quant finance trading algorithms and tools to retail on Solana. It trades on the Drift protocol DEX. We employed active yield vaults where users can pool in their USDC, BONK into the vault pools, and earn real yield from our algorithmic strategies which are connected to these vaults and running 24/7 under close monitoring.
 
 ## Inspiration
 97% of traders are not profitable, the market is so efficient that the only way you can be profitable is if you find your edge, that's why all the hedge funds and wall street employ quantitative methods so they can beat the market and they are so secretive about their alpha. We thought about coming up with our own edge with automation and coming up with quantitative methods to build strategies that would otherwise have been impossible to implement without automation to build out our edge and then allow retail to enjoy the profits from the institutional quantitative trading methods from our platform.
@@ -14,32 +14,32 @@ Pitch Deck - [Figma slides](https://www.figma.com/proto/diEzJsJcpkEzwZfWfRqULh/E
 ## What it does
 Nova Algo enables Drift Protocol based investment vaults that trade on Solana using custom made algorithmic trading strategies.
 
-We deployed our strategies using Drift Protocols vaults, allowing our strategies to be investable to any DeFi user with a profit-sharing fee model.
+We deployed our strategies using Drift Protocol's vaults, allowing our strategies to be investable to any DeFi user with a profit-sharing fee model.
 
-The DeFi user can invest in the strategies on our vaults using a familiar yield farming user interface directly from their wallet depositing USDC or BONK.
+The DeFi user can invest in the strategies on our vaults using a familiar yield farming user interface directly from their wallet depositing USDC or SOL.
 
 
 ## How we built it
 
 We wrote our trading strategies using `Python` and backtested them with the `Backtesting.py` library with some historical data. We also used trading and data analysis libraries like `pandas-ta`, `pandas` etc.
 
-We wrote our bots then connected it to our Drift protocol based vaults that trade on the Drift Protocol DEX. We are currently running three different strategies on our vaults at the moment: 
+We wrote our bots then connected it to our Drift protocol based vaults that trade on the Drift Protocol DEX. We are currently running two different strategies on our vaults at the moment: 
 
-1. The Drifting Tiger Vault - which trades the supply and demand zone strategy which trades the SOL-USD perpetual pair. Users deposit USDC into this vault.
+1. The SOl Perp Real Yield Vault - is based on a LongShortTrend strategy that employs the Arnaud Legoux Moving Average (ALMA) to directionally trade longs and shorts for trending assets. It is a classic trend-based long/short strategy designed to beat or match buy-and-hold, while reducing the drawdowns. In future versions, dynamic position sizing and position accumulation will be introduced in order to increase the sharpe and substantially reduce the drawdowns.
 
-2. The Bonking Dragon Vault - which trades the bollinger band + EMA strategy for the 1MBONK perpetual pair. Users deposit can deposit BONK or USDC into this vault. If users deposit BONK into the vault our bot borrows USDC on their behalf and trades with it, in a bull market they earn as their BONK appreciates in value and earn from from the vault's profits as well.
+2. The Gamma Market Maker Vault - it implements a Market Making strategy that employs the market quoting and market microstructure on SOLPERP to give an edge on the market while considering some key features like volatility, VWAP and Portfolio Management. It is designed to trade on the drift protocol and create a profitable edge as we offer both bid and ask on orderbook, while reducing the drawdowns
 
-3. The Double Boost Vault - which trades a funding rate based strategy on any pair we input, this strategy is very flexible as we can aim to improve it to even perform funding rate arbitrage between different pairs funding rates. Users deposit USDC into this vault.
+<!-- 3. The Drifting Tiger Vault - which trades the supply and demand zone strategy which trades the SOL-USD perpetual pair. Users deposit USDC into this vault. -->
 
 ## Where we deployed to/contract details
 
 We created and deployed our different vaults on the Solana Devnet Chain.
 
-1. Drifting Tiger Vault - HrAuKuC8KuhqRcdmUu3WhSrNFv4HaV6XtqCdashhVH1A
+1. Sol Perp Real Yield Vault - HrAuKuC8KuhqRcdmUu3WhSrNFv4HaV6XtqCdashhVH1A
 
-2. Bonking Dragon - 5QAPFbeAHtgb8LkbDBMSyaAmwtQRufWceQLLaxdSse6M
-
-3. Double Boost - 4K1s2DtLXrYXVMYShDdLLWTLezpyTBKpTFz2DEpt8QkF
+2. Gamma Market Maker Vault - 5QAPFbeAHtgb8LkbDBMSyaAmwtQRufWceQLLaxdSse6M
+<!-- 
+3. Drifting Tiger Vault  - 4K1s2DtLXrYXVMYShDdLLWTLezpyTBKpTFz2DEpt8QkF -->
 
 ## Installation
 
@@ -138,7 +138,7 @@ To install this project:
    python main.py
    ```
 
-8. **Configure the Vault (Optional)**
+8. **Configure the Vault**
 
    If you need to configure or initialize a vault, you can use the `configure_vault.py` or `initialize_vault.py` scripts:
 
@@ -157,4 +157,4 @@ To install this project:
 
     - The project uses various libraries such as `anchorpy`, `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
     - The `src/api/drift/api.py` file contains the main DriftAPI implementation.
-    - The `src/strategy/bollingerbands.py` file contains the Bollinger Bands strategy implementation.
+    - The `src/strategy/trendfollowing.py` file contains the Trend Following strategy implementation.

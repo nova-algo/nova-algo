@@ -19,7 +19,7 @@ anchorpy-core = "0.2.0"
 python-dotenv = "^1.0.0"
 #drift-jit-proxy = "0.1.4"
 #asyncio = "^3.4.3"
-driftpy = "^0.7.83"
+driftpy = "0.7.89"
 Backtesting = "^0.3.3"
 matplotlib = "^3.9.2"
 

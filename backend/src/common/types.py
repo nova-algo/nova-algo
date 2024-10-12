@@ -55,35 +55,15 @@ class MarketMakerConfig(BotConfig):
     risk_factor: Decimal
     inventory_target: Decimal
 
-
-@dataclass
-class BollingerBandsConfig(BotConfig):
-    # market_indexes: list[int]
-    # sub_accounts: list[int]
-    sma_window: int
-    lookback_days: int
-    max_positions: int
-    max_loss: float
-    target_profit: float
-    size_multiplier: float
-    # market_type: MarketType
-    target_leverage: float = 1.0
-    spread: float = 0.0
-    # symbol: str
-    # timeframe: str
-
-
-# @dataclass
-# class TrendFollowingConfig(BotConfig):
-#     # market_indexes: list[int]
-#     # sub_accounts: list[int]
-#     # market_type: MarketType
-#     target_leverage: float = 1.0
-#     spread: float = 0.0
-
-
 @dataclass
 class TrendFollowingConfig(BotConfig):
+    position_size: Decimal
+    symbol: str
+    market_type: MarketType
+    market_indexes: list[int] # in milliseconds
+    timeframe: str
+    start_date: str
+    end_date: str
     exhaustion_swing_length: int = 40
     smoothing_factor: int = 5
     threshold_multiplier: float = 1.5
@@ -91,15 +71,8 @@ class TrendFollowingConfig(BotConfig):
     alma_offset: float = 0.85
     alma_sigma: float = 6
     pyramiding: int = 5
-    position_size: Decimal
     target_leverage: float = 1.0
-    symbol: str
-    market_indexes: list[int]
-    market_type: MarketType
-    polling_interval: int = 60000  # in milliseconds
-    timeframe: str
-    start_date: str
-    end_date: str
+    polling_interval: int = 60000 # in milliseconds
 
 # @dataclass
 # class PerpFillerConfig(BotConfig):
@@ -107,3 +80,21 @@ class TrendFollowingConfig(BotConfig):
 #     revert_on_failure: bool = False
 #     simulate_tx_for_cu_estimate: bool = False
 #     use_burst_cu_limit: bool = False
+
+
+# @dataclass
+# class BollingerBandsConfig(BotConfig):
+#     # market_indexes: list[int]
+#     # sub_accounts: list[int]
+#     sma_window: int
+#     lookback_days: int
+#     max_positions: int
+#     max_loss: float
+#     target_profit: float
+#     size_multiplier: float
+#     # market_type: MarketType
+#     target_leverage: float = 1.0
+#     spread: float = 0.0
+#     # symbol: str
+#     # timeframe: str
+
