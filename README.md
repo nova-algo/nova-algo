@@ -6,10 +6,10 @@ Pitch Deck - [Figma slides](https://www.figma.com/proto/diEzJsJcpkEzwZfWfRqULh/N
 
 ## ✨ Description
 
-[Nova Algo](https://novaalgo.xyz/) is an algorithmic trading protocol for solana. It brings professional-grade quant finance trading algorithms and tools to retail on Solana. It trades on the Drift protocol DEX. We employed active yield vaults where users can pool in their USDC, BONK into the vault pools, and earn real yield from our algorithmic strategies which are connected to these vaults and running 24/7 under close monitoring.
+[Nova Algo](https://novaalgo.xyz/) is an algorithmic trading protocol for solana. It brings professional-grade quant finance trading algorithms and tools to retail on Solana. It trades on the Drift protocol DEX. We employed active yield vaults where users can pool in their USDC, SOL into the vault pools, and earn real yield from our algorithmic strategies which are connected to these vaults and running 24/7 under close monitoring.
 
 ## Inspiration
-97% of traders are not profitable, the market is so efficient that the only way you can be profitable is if you find your edge, that's why all the hedge funds and wall street employ quantitative methods so they can beat the market and they are so secretive about their alpha. We thought about coming up with our own edge with automation and coming up with quantitative methods to build strategies that would otherwise have been impossible to implement without automation to build out our edge and then allow retail to enjoy the profits from the institutional quantitative trading methods from our platform.
+97% of traders are not profitable due to market efficiency. To succeed, one must find a unique edge. This is why hedge funds and Wall Street firms employ secretive quantitative methods to beat the market. We developed our own edge through automation and quantitative strategies that would be impossible to implement manually. Our platform will allow retail investors to benefit from institutional-grade quantitative trading methods.
 
 ## What it does
 Nova Algo enables Drift Protocol based investment vaults that trade on Solana using custom made algorithmic trading strategies.
@@ -51,6 +51,10 @@ To install this project:
 - [Python](https://www.python.org/downloads/) (version 3.10 or higher)
 - [pyenv](https://github.com/pyenv/pyenv#installation)
 - [Poetry](https://python-poetry.org/docs/#installation)
+- [Solana CLI](https://docs.solanalabs.com/cli/install)
+- Solana wallet with SOL:
+  - For devnet: Use `solana airdrop 5` to get devnet SOL
+  - For mainnet: Ensure you have real SOL in your wallet
 
 ### Steps
 
@@ -130,7 +134,37 @@ To install this project:
    poetry shell
    ```
 
-7. **Run the Strategy**
+7. **Set up Environment Variables**
+
+   Create a `.env` file in the `backend` directory based on the `.env.example` file:
+
+   ```
+   cp .env.example .env
+   ```
+
+   Edit the `.env` file and fill in your specific values for the environment variables.
+
+8. **Initialize Drift Account**
+
+   Before making any deposits or running strategies, you need to initialize your account on Drift:
+
+   ```
+   python src/api/drift/initialize.py
+   ```
+
+   This script will create and initialize your account on the Drift protocol. It's a necessary step before you can interact with Drift, including making deposits or trading. Make sure this script runs successfully before proceeding to the next step.
+
+9. **Deposit into Drift**
+
+   To interact with Drift, you need to deposit SOL into Drift, run the deposit script:
+
+   ```
+   python src/api/drift/deposit.py
+   ```
+
+   This script will use the environment variables from your `.env` file to connect to the Drift protocol and make a deposit.
+
+10. **Run the Strategy**
 
    You can run the strategy using the main script:
 
@@ -138,7 +172,7 @@ To install this project:
    python main.py
    ```
 
-8. **Configure the Vault**
+11. **Configure the Vault**
 
    If you need to configure or initialize a vault, you can use the `configure_vault.py` or `initialize_vault.py` scripts:
 
@@ -149,12 +183,12 @@ To install this project:
 
    Follow the prompts or provide the necessary arguments to configure or initialize a vault.
 
-9. **Environment Variables**
+12. **Environment Variables**
 
    Make sure to set up your environment variables. Create a `.env` file in the `backend` directory with the necessary configurations.
 
-10. **Additional Notes**
+13. **Additional Notes**
 
-    - The project uses various libraries such as `anchorpy`, `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
+    - The project uses various libraries such as `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
     - The `src/api/drift/api.py` file contains the main DriftAPI implementation.
     - The `src/strategy/trendfollowing.py` file contains the Trend Following strategy implementation.
