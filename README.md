@@ -156,7 +156,7 @@ To install this project:
 
 9. **Deposit into Drift**
 
-   To deposit SOL into Drift, run the deposit script:
+   To interact with Drift, you need to deposit SOL into Drift, run the deposit script:
 
    ```
    python src/api/drift/deposit.py
