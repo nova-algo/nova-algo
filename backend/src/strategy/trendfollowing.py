@@ -47,7 +47,7 @@ class TrendFollowingStrategy(Bot):
 
         # Strategy-specific attributes
         self.exhaustion_swing_length = self.config.exhaustion_swing_length
-        self.smoothing_factor = self.config.smoothing_factor
+        self.smoothing_factor = self.config.smoothing_fbactor
         self.threshold_multiplier = self.config.threshold_multiplier
         self.atr_length = self.config.atr_length
         self.alma_offset = self.config.alma_offset
@@ -200,11 +200,27 @@ class TrendFollowingStrategy(Bot):
         logger.info(f"Latest smoothed_alma: {smoothed_alma}, type: {type(smoothed_alma)}")
         logger.info(f"Latest dynamic_threshold: {dynamic_threshold}, type: {type(dynamic_threshold)}")
 
+        # previous_price = self.historical_data['Close'].iloc[-2]
+        # previous_threshold = self.smoothed_alma.iloc[-2] + self.dynamic_threshold.iloc[-2]
+        # current_price = self.historical_data['Close'].iloc[-1]
+        # current_threshold = smoothed_alma + dynamic_threshold
+        # buy_signal = (previous_price <= previous_threshold) and (current_price > current_threshold)
+
         buy_signal = current_price > smoothed_alma + dynamic_threshold
         sell_signal = current_price < smoothed_alma - dynamic_threshold
 
+        # Log buy and sell signals
+        logger.info(f"Current price: {current_price}")
+        logger.info(f"Buy threshold: {smoothed_alma + dynamic_threshold}")
+        logger.info(f"Sell threshold: {smoothed_alma - dynamic_threshold}")
+        logger.info(f"Buy signal: {buy_signal}")
+        logger.info(f"Sell signal: {sell_signal}")
+
         position: PositionType = self.drift_api.get_position(self.market_index, self.config.market_type)
         current_position_size = Decimal(position.base_asset_amount) / BASE_PRECISION if position else Decimal('0')
+
+        # Log current position
+        logger.info(f"Current position size: {current_position_size}")
 
         user = self.drift_api.drift_client.get_user()
         total_collateral = user.get_total_collateral()
@@ -217,17 +233,20 @@ class TrendFollowingStrategy(Bot):
             remaining_size = max_position_size - current_position_size
             position_value = min(remaining_size, free_collateral * self.config.position_size)
             if position_value > 0:
+                logger.info(f"Opening long position with value: {position_value}")
                 await self.open_position(PositionDirection.Long(), position_value)
         elif sell_signal and current_position_size > -max_position_size:
             remaining_size = max_position_size + current_position_size
             position_value = min(remaining_size, free_collateral * self.config.position_size)
             if position_value > 0:
+                logger.info(f"Opening short position with value: {position_value}")
                 await self.open_position(PositionDirection.Short(), position_value)
         else:
             logger.info("No trading signal or maximum positions reached.")
 
         # Check for position exit
         if (current_position_size > 0 and sell_signal) or (current_position_size < 0 and buy_signal):
+            logger.info("Closing position due to opposite signal")
             await self.close_position()
 
         # if buy_signal and current_position_size < self.config.pyramiding:

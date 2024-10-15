@@ -144,7 +144,17 @@ To install this project:
 
    Edit the `.env` file and fill in your specific values for the environment variables.
 
-8. **Deposit into Drift**
+8. **Initialize Drift Account**
+
+   Before making any deposits or running strategies, you need to initialize your account on Drift:
+
+   ```
+   python src/api/drift/initialize.py
+   ```
+
+   This script will create and initialize your account on the Drift protocol. It's a necessary step before you can interact with Drift, including making deposits or trading. Make sure this script runs successfully before proceeding to the next step.
+
+9. **Deposit into Drift**
 
    To deposit SOL into Drift, run the deposit script:
 
@@ -154,7 +164,7 @@ To install this project:
 
    This script will use the environment variables from your `.env` file to connect to the Drift protocol and make a deposit.
 
-9. **Run the Strategy**
+10. **Run the Strategy**
 
    You can run the strategy using the main script:
 
@@ -162,7 +172,7 @@ To install this project:
    python main.py
    ```
 
-10. **Configure the Vault**
+11. **Configure the Vault**
 
    If you need to configure or initialize a vault, you can use the `configure_vault.py` or `initialize_vault.py` scripts:
 
@@ -173,12 +183,12 @@ To install this project:
 
    Follow the prompts or provide the necessary arguments to configure or initialize a vault.
 
-11. **Environment Variables**
+12. **Environment Variables**
 
    Make sure to set up your environment variables. Create a `.env` file in the `backend` directory with the necessary configurations.
 
-12. **Additional Notes**
+13. **Additional Notes**
 
-    - The project uses various libraries such as `anchorpy`, `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
+    - The project uses various libraries such as `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
     - The `src/api/drift/api.py` file contains the main DriftAPI implementation.
     - The `src/strategy/trendfollowing.py` file contains the Trend Following strategy implementation.

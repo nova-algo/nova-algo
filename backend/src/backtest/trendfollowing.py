@@ -95,7 +95,7 @@ def calculate_volatility(df, window=14):
 
 # Fetch historical data from Bybit (or another exchange, if you like)
 def fetch_data(symbol, timeframe, start_date, end_date):
-    exchange = ccxt.binance()
+    exchange = ccxt.bitstamp()
     
     timeframe_seconds = {
         '1m': 60, '5m': 300, '15m': 900, '30m': 1800,
@@ -158,7 +158,7 @@ def run_backtest(df, symbol):
 if __name__ == "__main__":
     symbols = ['SOLPERP', 'SOLUSDT']  # List of symbols to backtest
     timeframe = '15m' # You can change this time frame
-    start_date = '2024-01-01T00:00:00Z' # You can also change this
+    start_date = '2023-10-01T00:00:00Z' # You can also change this
     end_date = '2024-10-01T00:00:00Z' # And this
 
     results = []  # List to store results for each symbol
