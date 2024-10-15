@@ -78,7 +78,7 @@ async def main(keypath,
 
     # ch_signer = get_clearing_house_signer_public_key(drift_client.program_id)
     perp_market = await get_perp_market_account(
-        drift_client.program, params['spot_market_index']
+        drift_client.program, params['perp_market_index']
     )
 
     vault_user = get_user_account_public_key(drift_client.program_id, vault_pubkey)
@@ -148,3 +148,7 @@ if __name__ == '__main__':
         url,
         args.name,
     ))
+
+    #Solana Perp Real Vault - 6fL2jzjahLATs7o1M3kvdmX5FS749CnbY57iL52ixbBE
+
+    #Gamma Market Maker Vault - DnATvS42MGxzawqcyUuRTpXs27cDgNdc2f3aYFEyW9dd
