@@ -371,7 +371,8 @@ async def deposit_sol():
 
     # Get the SOL spot market index (usually 1 for SOL)
     sol_spot_market_index = 1
-    pubkey_string = "FVfT5LovFNye8qWKDQJUbVddkaPZPj18WaqxmcfbueaR"
+    #pubkey_string = "FVfT5LovFNye8qWKDQJUbVddkaPZPj18WaqxmcfbueaR"
+    pubkey_string = drift_client.wallet.payer.pubkey()
     pubkey = Pubkey.from_string(pubkey_string)
     # Get the user's associated token account for SOL
     user_sol_account = drift_client.get_associated_token_account_public_key(sol_spot_market_index)
