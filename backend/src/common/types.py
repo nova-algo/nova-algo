@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union, TypedDict
 from dataclasses import dataclass
 from driftpy.types import MarketType, PerpPosition, SpotPosition, PerpMarketAccount, SpotMarketAccount
 from driftpy.dlob.dlob_node import DLOBNode  
 from decimal import Decimal
+from hexbytes import HexBytes
 
 MakerNodeMap = dict[str, list[DLOBNode]]
 
@@ -98,3 +99,37 @@ class TrendFollowingConfig(BotConfig):
 #     # symbol: str
 #     # timeframe: str
 
+
+# class SwapParams(TypedDict):
+#     token_in: str
+#     token_out: str
+#     amount_in: Decimal
+#     min_amount_out: Decimal
+#     deadline: Optional[int]
+#     slippage_tolerance: Decimal
+
+# class LiquidityParams(TypedDict):
+#     token_a: str
+#     token_b: str
+#     amount_a_desired: Decimal
+#     amount_b_desired: Decimal
+#     amount_a_min: Decimal
+#     amount_b_min: Decimal
+#     deadline: Optional[int]
+
+# class TokenInfo(TypedDict):
+#     address: str
+#     symbol: str
+#     decimals: int
+
+@dataclass
+class BackrunTx:
+    tx: Dict
+    raw: HexBytes 
+    hash: HexBytes
+
+@dataclass
+class ArbitrageResult:
+    profit_amount: int
+    path: List[str]
+    pools: Dict[str, Dict]

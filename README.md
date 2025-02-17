@@ -189,6 +189,6 @@ To install this project:
 
 13. **Additional Notes**
 
-    - The project uses various libraries such as `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
+    - The project uses various libraries such as `solana`, `driftpy`, and others.   Make sure you're familiar with their documentation.
     - The `src/api/drift/api.py` file contains the main DriftAPI implementation.
     - The `src/strategy/trendfollowing.py` file contains the Trend Following strategy implementation.
