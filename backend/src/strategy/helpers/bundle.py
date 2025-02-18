@@ -61,12 +61,41 @@ class BundleBuilder:
 
     def _build_payloads(self, arb_result: ArbitrageResult) -> List[Dict]:
         """Build executor payloads from arbitrage result"""
-        # Convert arbitrage path to executor payloads
-        # Implementation depends on your specific needs
-        pass
+        payloads = []
+        
+        for swap in arb_result.swaps:
+            payload = {
+                'target': swap.pool_address,
+                'calldata': swap.get_calldata(),
+                'value': 0
+            }
+            payloads.append(payload)
+            
+        return payloads
 
     def _create_backrun_tx(self, payloads: List[Dict], bribe_bips: int) -> Dict:
         """Create and sign the backrun transaction"""
-        # Implementation of transaction creation
-        # Using self.executor contract
-        pass 
+        nonce = self.w3.eth.get_transaction_count(self.account.address)
+        
+        # Get current gas prices
+        base_fee = self.w3.eth.get_block('latest')['baseFeePerGas']
+        priority_fee = self.w3.eth.max_priority_fee
+        max_fee = base_fee * 2 + priority_fee
+        
+        # Build transaction
+        tx = {
+            'from': self.account.address,
+            'to': self.executor.address,
+            'nonce': nonce,
+            'gas': 500000,  # Estimate this based on payload size
+            'maxFeePerGas': max_fee,
+            'maxPriorityFeePerGas': priority_fee,
+            'data': self.executor.encodeABI(
+                fn_name='execute_payloads',
+                args=[payloads, True, bribe_bips]
+            )
+        }
+        
+        # Sign transaction
+        signed_tx = self.account.sign_transaction(tx)
+        return signed_tx

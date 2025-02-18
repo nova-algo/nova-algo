@@ -30,6 +30,10 @@ class Bot(ABC):
     async def health_check(self):
         pass
 
+    @abstractmethod
+    async def execute(self):
+        pass
+
 
 @dataclass
 class BotConfig:
@@ -74,6 +78,27 @@ class TrendFollowingConfig(BotConfig):
     pyramiding: int = 5
     target_leverage: float = 1.0
     polling_interval: int = 60000 # in milliseconds
+
+
+@dataclass
+class BackrunnerConfig:
+    bot_id: str
+    strategy_type: str
+    chain_id: int
+    min_profit: Decimal
+    max_gas_price: int
+    simulation_timeout: float = 0.25
+    dry_run: bool = True
+    
+    # Optional advanced settings
+    gas_multiplier: float = 1.2
+    max_payloads: int = 16
+    max_payload_bytes: int = 1024
+    
+    def __post_init__(self):
+        if self.strategy_type != "backrunner":
+            raise ValueError("strategy_type must be 'backrunner'")
+
 
 # @dataclass
 # class PerpFillerConfig(BotConfig):

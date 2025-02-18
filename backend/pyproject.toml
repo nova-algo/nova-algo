@@ -19,10 +19,19 @@ anchorpy-core = "0.2.0"
 python-dotenv = "^1.0.0"
 #drift-jit-proxy = "0.1.4"
 #asyncio = "^3.4.3"
-driftpy = "0.7.89"
+driftpy = "0.8.16"
 Backtesting = "^0.3.3"
 matplotlib = "^3.9.2"
 seaborn = "^0.13.2"
+
+web3 = "^6.0.0"
+#aiohttp = "^3.9.1"
+#websockets = "^12.0"
+eth-abi = "^4.2.1"
+eth-utils = "^2.3.1"
+eth-account = "^0.9.0"
+degenbot = "^0.2.0"
+ujson = "^5.9.0"
 
 
 [tool.poetry.dev-dependencies]
