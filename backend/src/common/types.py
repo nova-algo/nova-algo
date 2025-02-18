@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union, TypedDict
 from dataclasses import dataclass
 from driftpy.types import MarketType, PerpPosition, SpotPosition, PerpMarketAccount, SpotMarketAccount
 from driftpy.dlob.dlob_node import DLOBNode  
 from decimal import Decimal
+from hexbytes import HexBytes
 
 MakerNodeMap = dict[str, list[DLOBNode]]
 
@@ -27,6 +28,10 @@ class Bot(ABC):
 
     @abstractmethod
     async def health_check(self):
+        pass
+
+    @abstractmethod
+    async def execute(self):
         pass
 
 
@@ -74,6 +79,27 @@ class TrendFollowingConfig(BotConfig):
     target_leverage: float = 1.0
     polling_interval: int = 60000 # in milliseconds
 
+
+@dataclass
+class BackrunnerConfig:
+    bot_id: str
+    strategy_type: str
+    chain_id: int
+    min_profit: Decimal
+    max_gas_price: int
+    simulation_timeout: float = 0.25
+    dry_run: bool = True
+    
+    # Optional advanced settings
+    gas_multiplier: float = 1.2
+    max_payloads: int = 16
+    max_payload_bytes: int = 1024
+    
+    def __post_init__(self):
+        if self.strategy_type != "backrunner":
+            raise ValueError("strategy_type must be 'backrunner'")
+
+
 # @dataclass
 # class PerpFillerConfig(BotConfig):
 #     filler_polling_interval: Optional[float] = None
@@ -98,3 +124,37 @@ class TrendFollowingConfig(BotConfig):
 #     # symbol: str
 #     # timeframe: str
 
+
+# class SwapParams(TypedDict):
+#     token_in: str
+#     token_out: str
+#     amount_in: Decimal
+#     min_amount_out: Decimal
+#     deadline: Optional[int]
+#     slippage_tolerance: Decimal
+
+# class LiquidityParams(TypedDict):
+#     token_a: str
+#     token_b: str
+#     amount_a_desired: Decimal
+#     amount_b_desired: Decimal
+#     amount_a_min: Decimal
+#     amount_b_min: Decimal
+#     deadline: Optional[int]
+
+# class TokenInfo(TypedDict):
+#     address: str
+#     symbol: str
+#     decimals: int
+
+@dataclass
+class BackrunTx:
+    tx: Dict
+    raw: HexBytes 
+    hash: HexBytes
+
+@dataclass
+class ArbitrageResult:
+    profit_amount: int
+    path: List[str]
+    pools: Dict[str, Dict]

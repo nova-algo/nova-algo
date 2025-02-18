@@ -47,7 +47,7 @@ class TrendFollowingStrategy(Bot):
 
         # Strategy-specific attributes
         self.exhaustion_swing_length = self.config.exhaustion_swing_length
-        self.smoothing_factor = self.config.smoothing_fbactor
+        self.smoothing_factor = self.config.smoothing_factor
         self.threshold_multiplier = self.config.threshold_multiplier
         self.atr_length = self.config.atr_length
         self.alma_offset = self.config.alma_offset
@@ -165,17 +165,60 @@ class TrendFollowingStrategy(Bot):
 
      # Function to calculate volatility (standard deviation of returns)
     # It isn't required in the grand scheme but it is a nice to have
-    def calculate_volatility(df, window=14):
-        df['Returns'] = df['Close'].pct_change()
-        df['Volatility'] = df['Returns'].rolling(window).std()
-        # Return the rolling standard deviation of returns
+    # def calculate_volatility(df, window=14):
+    #     df['Returns'] = df['Close'].pct_change()
+    #     df['Volatility'] = df['Returns'].rolling(window).std()
+    #     # Return the rolling standard deviation of returns
         
-        return df['Volatility']
+    #     return df['Volatility']
+
+    def crossover(self, series1: np.ndarray | pd.Series, series2: np.ndarray | pd.Series) -> bool:
+        """
+        Exact implementation of backtesting.py's crossover function.
+        Returns True if series1 crosses above series2.
+        """
+        try:
+            if isinstance(series1, (int, float)):
+                series1 = [series1, series1]
+            if isinstance(series2, (int, float)):
+                series2 = [series2, series2]
+                
+            if isinstance(series1, pd.Series):
+                series1 = series1.values
+            if isinstance(series2, pd.Series):
+                series2 = series2.values
+                
+            return series1[-2] < series2[-2] and series1[-1] > series2[-1]
+        except IndexError:
+            return False
 
     async def execute(self):
-        if not self.is_initialized:
-            logger.warning("Strategy not initialized. Skipping execution.")
+
+        if not self.is_initialized or len(self.historical_data) < 2:
+            logger.warning("Insufficient data for signal generation")
             return
+
+        # Get the last two close prices
+        close_series = self.historical_data['Close'].values[-2:]
+        
+        # Calculate upper and lower thresholds for last two periods
+        upper_threshold = self.smoothed_alma[-2:] + self.dynamic_threshold[-2:]
+        lower_threshold = self.smoothed_alma[-2:] - self.dynamic_threshold[-2:]
+        
+        # Generate signals using exact crossover logic
+        buy_signal = self.crossover(close_series, upper_threshold)
+        sell_signal = self.crossover(lower_threshold, close_series)
+
+        logger.info(f"Signal generation values:")
+        logger.info(f"Last two closes: {close_series}")
+        logger.info(f"Last two upper thresholds: {upper_threshold}")
+        logger.info(f"Last two lower thresholds: {lower_threshold}")
+        logger.info(f"Buy signal: {buy_signal}")
+        logger.info(f"Sell signal: {sell_signal}")
+
+        # if not self.is_initialized:
+        #     logger.warning("Strategy not initialized. Skipping execution.")
+        #     return
 
         if not await self.health_check():
             logger.warning("Health check failed. Skipping execution.")
