@@ -85,22 +85,22 @@ Our strategies are designed to:
 
 Detailed installation instructions available in [INSTALLATION.md](INSTALLATION.md)
 
-## 🤝 Contributing
+<!-- ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details. -->
 
-## 📄 License
+<!-- ## 📄 License
 
-[MIT License](LICENSE)
+[MIT License](LICENSE) -->
 
 ## 🔗 Links
 - [Website](https://novaalgo.xyz)
 <!-- - [Documentation](https://docs.novaalgo.xyz) -->
 - [GitHub](https://github.com/nova-algo)
 
-## 📧 Contact
+<!-- ## 📧 Contact
 
-For inquiries: [contact@novaalgo.xyz](mailto:contact@novaalgo.xyz)
+For inquiries: [contact@novaalgo.xyz](mailto:contact@novaalgo.xyz) -->
 
 ---
 
