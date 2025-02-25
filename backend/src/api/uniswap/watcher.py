@@ -3,7 +3,8 @@ from typing import Dict, Set, Deque
 from web3 import Web3
 import logging
 from ...common.config import UniswapConfig
-from ...strategy.processor import TransactionProcessor
+from .processor import TransactionProcessor
+
 
 logger = logging.getLogger(__name__)
 
