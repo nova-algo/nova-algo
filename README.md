@@ -5,7 +5,7 @@ Nova Algo is a revolutionary platform that democratizes algorithmic trading thro
 
 ## The Problem We're Solving
 
-The $91.9 trillion global financial markets remain inaccessible to most traders due to three critical barriers:
+The rapidly expanding cryptocurrency markets (over $3 trillion in 2024) remain inaccessible to most traders due to three critical barriers: 
 
 1. **Technical Barrier**: Creating effective trading algorithms traditionally requires extensive programming knowledge and quantitative skills
 
