@@ -113,9 +113,8 @@ poetry run pytest
 
 This component integrates with:
 
-1. **Nova Algo Core** - For strategy execution and account management
-2. **Vaults Backend** - For automated trading strategies
-3. **Frontend** - Through WebSocket and REST APIs
+1. **Vaults Backend** - For automated trading strategies
+2. **Frontend** - Through WebSocket and REST APIs
 
 ## 📊 Performance Testing
 

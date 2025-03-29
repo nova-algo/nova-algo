@@ -5,7 +5,7 @@ Nova Algo is a revolutionary platform that democratizes algorithmic trading thro
 
 ## The Problem We're Solving
 
-The rapidly expanding cryptocurrency markets (over $3 trillion in 2024) remain inaccessible to most traders due to three critical barriers: 
+The rapidly expanding cryptocurrency markets (over $3 trillion in 2024) remain ineffective to most traders due to three critical barriers: 
 
 1. **Technical Barrier**: Creating effective trading algorithms traditionally requires extensive programming knowledge and quantitative skills
 
@@ -90,7 +90,7 @@ Our platform delivers the power of algorithmic trading to everyone - from instit
   - Tailored risk profiles
   - Custom execution parameters
 
-### Coming April 2024: Strategy Development Capabilities
+### Coming April 2025: Strategy Development Capabilities
 - **No-Code Strategy Creation**
   - Natural language to code translation
   - Visual strategy builder
