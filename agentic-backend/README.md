@@ -1,68 +1,133 @@
-# Rebalancr Backend
 
-## Installation Guide
+# Nova Algo: Agentic Backend
 
-### Prerequisites
-- [pyenv](https://github.com/pyenv/pyenv) for Python version management
-- [Poetry](https://python-poetry.org/docs/) for dependency management
+> AI-powered trading agent and portfolio management component
 
-### Step 1: Install pyenv
+This module provides Nova Algo with intelligent portfolio management and conversational trading capabilities through an AI-powered agentic system.
 
-#### macOS
-```bash
-# Using Homebrew
-brew update
-brew install pyenv
-echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
-echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
-echo 'eval "$(pyenv init -)"' >> ~/.zshrc
-source ~/.zshrc
+## 📋 Component Overview
+
+The agentic backend powers these Nova Algo features:
+- Conversational trading interface
+- Autonomous portfolio rebalancing
+- Market intelligence and risk assessment
+- Strategy execution and optimization
+
+## 🧠 Technical Architecture
+
+The component is structured around three core systems:
+
+1. **Intelligence Engine**
+   - Statistical market analysis
+   - Sentiment processing
+   - Risk-adjusted portfolio optimization
+
+2. **Agent Kit**
+   - Natural language understanding
+   - Trading intent recognition
+   - Conversation management
+
+3. **Strategy Engine**
+   - Trade execution routing
+   - Risk management
+   - Performance tracking
+
+## 📁 Directory Structure
+
+```plaintext
+agentic-backend/
+├── src/
+│   ├── intelligence/
+│   │   ├── intelligence_engine.py    # Core analysis engine
+│   │   ├── market_analysis.py        # Statistical analysis
+│   │   ├── market_conditions.py      # Market classifier
+│   │   └── allora/                   # Allora integration
+│   ├── chat/                         # Conversational interface
+│   ├── strategy/                     # Strategy implementation
+│   │   ├── engine.py                 # Strategy execution
+│   │   ├── risk_manager.py           # Risk assessment
+│   │   └── risk_monitor.py           # Risk tracking
+│   └── execution/                    # Trade execution
+└── tests/                            # Component tests
 ```
 
-#### Linux
-```bash
-curl https://pyenv.run | bash
-echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-source ~/.bashrc
+## 💻 Code Examples
+
+### Intelligence Engine
+```python
+class IntelligenceEngine:
+    """Combines market analysis, AI predictions, and statistical metrics"""
+    
+    async def analyze_portfolio(self, user_id: str, portfolio_id: int):
+        # Get portfolio data and market analysis
+        # Calculate combined scores using asset-specific weights
+        # Generate rebalancing recommendations
 ```
 
-### Step 2: Set up Python using pyenv
-```bash
-# Install Python 3.10 (or your required version)
-pyenv install 3.10.0
-
-# Navigate to project directory
-cd rebalancr/backend
-
-# Set local Python version
-pyenv local 3.10.0
+### Agent Communication
+```python
+class AgentKitClient:
+    """Client for business logic and domain-specific operations"""
+    
+    async def get_agent_response(self, user_id, message, session_id=None):
+        """
+        Send a message and get a response
+        """
+        # Use the AgentManager to get the basic response
+        response = await self.agent_manager.get_agent_response(user_id, message, session_id)
+        
+        # Here you could enrich the response with business context if needed
+        # For example, adding market data or portfolio recommendations
+        
+        return response
 ```
 
-### Step 3: Install Poetry
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
-```
+## 🛠️ Development
 
-### Step 4: Install project dependencies
+### Setup
 ```bash
-# Clone the repository (if you haven't already)
-git clone https://github.com/yourusername/rebalancr.git
-cd rebalancr/backend
+# Navigate to component directory
+cd nova-algo/agentic-backend
 
-# Install dependencies
+# Install dependencies using Poetry
 poetry install
-```
 
-## Running the Server
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys and settings
 
-```bash
-# Activate the Poetry environment
+# Activate virtual environment
 poetry shell
 
-# Start the FastAPI server
-uvicorn rebalancr.api.app:app --reload --host 0.0.0.0 --port 8000
+# Run component tests
+poetry run pytest
 ```
 
-The server will be available at http://localhost:8000 with WebSocket endpoint at ws://localhost:8000/ws.
+### Key Dependencies
+- Python 3.10+
+- FastAPI for API endpoints
+- LangChain for agent orchestration
+- Allora for market sentiment analysis
+
+## 🔄 Integration
+
+This component integrates with:
+
+1. **Nova Algo Core** - For strategy execution and account management
+2. **Vaults Backend** - For automated trading strategies
+3. **Frontend** - Through WebSocket and REST APIs
+
+## 📊 Performance Testing
+
+Run performance benchmarks to ensure the agent's response time stays under 1 second:
+
+```bash
+poetry run pytest tests/performance/ -v
+```
+
+## 📝 Development Notes
+
+- The agent uses a ReAct pattern for reasoning about market conditions
+- WebSocket connections maintain user chat sessions
+- Agent responses are enriched with real-time market data
+- All trading actions go through the risk management system
