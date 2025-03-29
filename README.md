@@ -1,63 +1,128 @@
+
 # Nova Algo
 
-<!-- ![Nova Algo Banner](assets/banner.png) -->
+Nova Algo is a revolutionary platform that democratizes algorithmic trading through AI. We empower traders of all technical backgrounds to create, test, and deploy sophisticated trading strategies using simple natural language instructions. Our dual-approach system offers both AI-generated custom strategies and battle-tested pre-built algorithms, all within a secure testing environment.
 
-Nova Algo is a professional-grade algorithmic trading protocol that brings institutional-level quantitative trading strategies to DeFi across multiple chains. Our platform enables sophisticated trading strategies through automated systems, advanced risk management, and real-time market analysis.
+## The Problem We're Solving
 
-## 🌟 Features
+The $91.9 trillion global financial markets remain inaccessible to most traders due to three critical barriers:
+
+1. **Technical Barrier**: Creating effective trading algorithms traditionally requires extensive programming knowledge and quantitative skills
+
+2. **Risk Assessment Challenge**: Without robust testing infrastructure, strategies often fail catastrophically when deployed with real capital
+
+3. **Strategy Innovation Gap**: Countless trading insights go unexploited because traders lack the technical means to implement and validate their ideas
+
+## Our Solution
+
+Nova Algo bridges these gaps through:
+
+1. **Advanced Strategy Suite**: Access our production-ready trading algorithms, including our sophisticated rebalancing agent, momentum strategies, and more
+
+2. **AI Strategy Generation**: Transform natural language descriptions into executable trading code using our RAG-enhanced AI system
+
+3. **Secure Sandbox Environment**: Test all strategies in an isolated environment with resource limitations and security boundaries
+
+4. **Comprehensive Performance Analysis**: Evaluate strategies against historical data with metrics for risk-adjusted returns, drawdowns, and more
+
+5. **Multi-Strategy Framework**: Support for diverse strategy types including technical indicators, sentiment analysis, and statistical arbitrage
+
+Our platform delivers the power of algorithmic trading to everyone - from institutional traders seeking to diversify their approach to individual investors with unique market insights but limited technical skills. Whether using our proven strategies or creating custom ones, Nova Algo transforms trading ideas into executable algorithms in minutes rather than months.
+
+## 🌟 Core Platform Features
 
 ### Multi-Chain Support
 - **Solana**: Advanced integration with Drift Protocol
 - **Ethereum**: MEV strategies and DEX arbitrage
 - **Cross-chain**: Optimized trading across different blockchain ecosystems
 
-### Trading Strategies
-- **Algorithmic Trading**
-  - Trend following systems
-  - Market making strategies
-  - MEV backrunning optimization
-  - Cross-DEX arbitrage
+### Intelligent Trading Modules
 
-- **Active Yield Generation**
-  - Automated yield vaults
-  - Risk-managed position sizing
-  - Dynamic rebalancing
-  - Real-time performance monitoring
+#### 1. Automated Strategy Vaults
+- **SOL Perp Real Yield Vault**
+  - LongShortTrend strategy using ALMA
+  - Dynamic position sizing
+  - Automated trend detection
+  - Contract: `HrAuKuC8KuhqRcdmUu3WhSrNFv4HaV6XtqCdashhVH1A`
 
-### Technical Infrastructure
-- **Advanced Architecture**
-  - Modular strategy implementation
-  - Real-time market data processing
-  - Efficient transaction management
-  - Robust error handling and recovery
+- **Gamma Market Maker Vault**
+  - Advanced market making on SOLPERP
+  - Volatility-based quoting
+  - Microstructure analysis
+  - Contract: `5QAPFbeAHtgb8LkbDBMSyaAmwtQRufWceQLLaxdSse6M`
 
-- **Risk Management**
-  - Sophisticated position sizing
-  - Dynamic stop-loss systems
-  - Portfolio rebalancing
-  - Real-time risk monitoring
+- **MEV Backrunner**
+  - Uniswap/Curve arbitrage detection
+  - Efficient bundle execution
+  - Gas-optimized transactions
+  - Real-time opportunity analysis
 
-## 🚀 Live Implementations
+#### 2. AI-Powered Portfolio Management
+- **Data-Driven Intelligence Engine**
+  - Statistical market analysis for optimal trade timing
+  - Real-time volatility and correlation tracking
+  - Risk-adjusted portfolio optimization
 
-### Solana Ecosystem
-1. **SOL Perp Real Yield Vault**
-   - LongShortTrend strategy using ALMA
-   - Dynamic position sizing
-   - Automated trend detection
-   - Contract: `HrAuKuC8KuhqRcdmUu3WhSrNFv4HaV6XtqCdashhVH1A`
+- **Advanced Rebalancing**
+  - Dynamic rebalancing with circuit breakers
+  - Risk-aware trade execution
+  - Performance tracking and optimization
 
-2. **Gamma Market Maker Vault**
-   - Advanced market making on SOLPERP
-   - Volatility-based quoting
-   - Microstructure analysis
-   - Contract: `5QAPFbeAHtgb8LkbDBMSyaAmwtQRufWceQLLaxdSse6M`
+- **Market Intelligence**
+  - Real-time market sentiment analysis
+  - Asset-specific price predictions
+  - Manipulation detection algorithms
+  - Fear/greed index monitoring
 
-### Ethereum Ecosystem
-1. **MEV Backrunner**
-   - Uniswap/Curve arbitrage detection
-   - Efficient bundle execution
-   - Gas-optimized transactions
-   - Real-time opportunity analysis
+#### 3. Conversational Trading Agent
+- **Natural Language Trading Interface**
+  - Execute trades through simple conversations
+  - Receive market insights and recommendations
+  - Portfolio monitoring and adjustments
+  
+- **Intelligent Decision Making**
+  - Combines sentiment analysis with statistical metrics
+  - Autonomous position sizing and risk management
+  - Dynamic strategy adaptation to market conditions
+  
+- **Personalized Agent Experience**
+  - Learn user preferences over time
+  - Tailored risk profiles
+  - Custom execution parameters
+
+### Coming April 2024: Strategy Development Capabilities
+- **No-Code Strategy Creation**
+  - Natural language to code translation
+  - Visual strategy builder
+  - Template modification
+  
+- **Professional Development Tools**
+  - Comprehensive API
+  - Custom indicator creation
+  - Strategy backtesting framework
+  
+- **Strategy Marketplace**
+  - Community-built strategies
+  - Performance leaderboards
+  - Strategy subscription options
+
+## 🧠 AI Architecture
+
+```plaintext
+┌─────────────────┐    ┌──────────────┐    ┌────────────────┐
+│ AI Analysis     │───▶│ Intelligence │───▶│ Strategy       │
+│ - Predictions   │    │    Engine    │    │   Engine       │
+│ - Sentiment     │    │ (Decision    │    │ (Execution     │
+│ - Market Data   │    │  Making)     │    │  Logic)        │
+└─────────────────┘    └──────────────┘    └────────────────┘
+         ▲                    │                     │
+         │                    ▼                     ▼
+┌─────────────────┐    ┌──────────────┐    ┌────────────────┐
+│ Market Analysis │    │    Risk      │    │  Performance   │
+│ - Statistics    │────▶  Management  │────▶   Tracking     │
+│ - Patterns      │    │   System     │    │   & Learning   │
+└─────────────────┘    └──────────────┘    └────────────────┘
+```
 
 ## 💻 Technical Stack
 
@@ -83,24 +148,28 @@ Our strategies are designed to:
 
 ## 🛠 Installation
 
-Detailed installation instructions available in [INSTALLATION.md](INSTALLATION.md)
+```bash
+# Clone the repository
+git clone https://github.com/nova-algo/nova-algo.git
+cd nova-algo
 
-<!-- ## 🤝 Contributing
+# Install dependencies using Poetry
+poetry install
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details. -->
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys and settings
 
-<!-- ## 📄 License
+# Activate virtual environment
+poetry shell
 
-[MIT License](LICENSE) -->
+# Run tests
+poetry run pytest
+```
 
 ## 🔗 Links
 - [Website](https://novaalgo.xyz)
-<!-- - [Documentation](https://docs.novaalgo.xyz) -->
 - [GitHub](https://github.com/nova-algo)
-
-<!-- ## 📧 Contact
-
-For inquiries: [contact@novaalgo.xyz](mailto:contact@novaalgo.xyz) -->
 
 ---
 
