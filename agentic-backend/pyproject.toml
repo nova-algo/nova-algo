@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "rebalancr"
+version = "0.1.0"
+description = "Portfolio rebalancing with AI and statistical methods"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "rebalancr"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+fastapi = ">=0.95.0"
+uvicorn = ">=0.22.0"
+websockets = ">=11.0.3"
+httpx = ">=0.24.1"
+pandas = ">=2.0.0"
+numpy = ">=1.24.0"
+pydantic = ">=2.0.0"
+python-dotenv = ">=1.0.0"
+langchain = ">=0.0.267"
+langgraph = "^0.2.39"
+coinbase-agentkit = "0.1.6"
+coinbase-agentkit-langchain = ">=0.1.0"
+aiohttp = ">=3.8.5"
+sqlite3-plus = ">=0.0.2"
+langgraph-checkpoint-sqlite = "^2.0.5"
+kuru-sdk = "^0.1.8"
+langchain-google-genai = "^2.0.11"
+langchain-openai = ">=0.3.5,<1.0.0"
+langchain-deepseek = "^0.1.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.3.1"
+black = ">=23.3.0"
+isort = ">=5.12.0"
+pylint = ">=2.17.2"
+mypy = ">=1.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 88 
