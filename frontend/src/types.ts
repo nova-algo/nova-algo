@@ -1,5 +1,18 @@
 import { Session } from "next-auth";
 
+export interface Message {
+  text: string;
+  sender: "user" | "ai";
+  timestamp: Date;
+  chatId?: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  lastMessage: string;
+  timestamp: Date;
+}
 export interface Vault {
   id: string;
   name: string;
