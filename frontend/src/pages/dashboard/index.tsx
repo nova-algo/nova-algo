@@ -12,17 +12,8 @@ import {
   Text,
   VStack,
   HStack,
-  Flex,
   Button,
-  Drawer,
-  DrawerBody,
-  DrawerHeader,
-  DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
   useDisclosure,
-  useBreakpointValue,
-  Image,
   ModalHeader,
   ModalContent,
   ModalOverlay,
@@ -45,10 +36,6 @@ import {
   LuWallet,
   LuTrendingUp,
   LuPieChart,
-  LuHome,
-  LuUser,
-  LuSettings,
-  LuMenu,
   LuPlus,
   LuChevronDown,
   LuDollarSign,
@@ -57,13 +44,13 @@ import {
 import { IconType } from "react-icons";
 import VaultChart from "@/components/VaultChart";
 import { useAppContext, useNextAuthSession } from "@/context/app-context";
-import { Link } from "@chakra-ui/next-js";
 import { objectToQueryParams } from "@/utils";
 import { useFormik } from "formik";
 import { object, string } from "yup";
 import { useRouter } from "next/router";
 import { OktoContextType, useOkto } from "okto-sdk-react";
 import Head from "next/head";
+import DashboardWrapper from "@/components/DashboardWrapper";
 
 type FormFields = {
   address: string;
@@ -81,10 +68,10 @@ const UserDashboard = () => {
     address,
     isAuthenticated,
     balanceInUSD,
+    balanceSymbol,
   } = useAppContext();
   const [canLoad, setCanLoad] = useState(false);
   const { data: session } = useNextAuthSession();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const { showWidgetModal } = useOkto() as OktoContextType;
   const router = useRouter();
   const {
@@ -108,7 +95,6 @@ const UserDashboard = () => {
       await handleMercuryo(values);
     },
   });
-  const isMobile = useBreakpointValue({ base: true, md: false });
 
   async function fetchSignature(address: string) {
     const response = await fetch(
@@ -189,44 +175,8 @@ const UserDashboard = () => {
           content="NovaAlgo is a decentralized cryptocurrency exchange platform."
         />
       </Head>
-      <Flex>
-        {!isMobile && (
-          <Box
-            width="250px"
-            bg="gray.100"
-            p={4}
-            height="100vh"
-            pos={"sticky"}
-            top={0}
-          >
-            <Image
-              src="/images/desktop-logo-white.png"
-              alt="app logo"
-              maxW={"100px"}
-              ml={3}
-              mixBlendMode={"difference"}
-              mb={5}
-            />
-            <Sidebar />
-          </Box>
-        )}
+      <DashboardWrapper>
         <Box flex={1}>
-          <HStack
-            bg="gray.100"
-            height="50px"
-            p={4}
-            justify="space-between"
-            pos={"sticky"}
-            top={0}
-            zIndex={10}
-          >
-            {isMobile && (
-              <Button onClick={onOpen} leftIcon={<LuMenu />} variant="ghost">
-                Menu
-              </Button>
-            )}
-            <Link href="/">Back to site</Link>
-          </HStack>
           <Box p={{ base: 4, md: 6, lg: 8 }}>
             <HStack wrap="wrap" justify="space-between" mb={6}>
               <Heading>
@@ -246,7 +196,16 @@ const UserDashboard = () => {
               <StatCard
                 icon={LuWallet}
                 title="Total Balance"
-                value={"$" + balanceInUSD}
+                value={
+                  <>
+                    <HStack>
+                      <Text>${balanceInUSD}</Text>
+                      <Text fontSize={"smaller"}>
+                        ({balanceSymbol}:{balance.substring(0, 6)})
+                      </Text>
+                    </HStack>
+                  </>
+                }
               >
                 <HStack mt={3} wrap={{ base: "wrap", lg: "nowrap" }}>
                   <Button
@@ -301,17 +260,17 @@ const UserDashboard = () => {
                 </Heading>
                 <VStack align="stretch" spacing={4}>
                   <VaultItem
-                    name="Growth Fund"
+                    name="Drifting Tiger"
                     balance="$5,000"
                     profit="+12.3%"
                   />
                   <VaultItem
-                    name="Tech Innovators"
+                    name="Bonking Dragon"
                     balance="$3,000"
                     profit="+8.7%"
                   />
                   <VaultItem
-                    name="Green Energy"
+                    name="Gamma Vault"
                     balance="$2,245"
                     profit="+5.2%"
                   />
@@ -325,17 +284,17 @@ const UserDashboard = () => {
                   <TransactionItem
                     type="Deposit"
                     amount="$1,000"
-                    date="2023-06-01"
+                    date="2024-10-01"
                   />
                   <TransactionItem
                     type="Withdrawal"
                     amount="$500"
-                    date="2023-05-28"
+                    date="2024-09-28"
                   />
                   <TransactionItem
                     type="Deposit"
                     amount="$2,000"
-                    date="2023-05-15"
+                    date="2024-09-15"
                   />
                 </VStack>
               </Box>
@@ -442,62 +401,11 @@ const UserDashboard = () => {
             </ModalBody>
           </ModalContent>
         </Modal>
-
-        <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
-          <DrawerOverlay />
-          <DrawerContent>
-            <DrawerCloseButton />
-            <DrawerHeader>Menu</DrawerHeader>
-            <DrawerBody>
-              <Sidebar />
-            </DrawerBody>
-          </DrawerContent>
-        </Drawer>
-      </Flex>
+      </DashboardWrapper>
     </>
   );
 };
 
-const Sidebar = () => {
-  return (
-    <VStack spacing={4} align="stretch">
-      <SidebarItem icon={LuHome} label="Dashboard" />
-      <SidebarItem icon={LuWallet} label="Vaults" />
-      <SidebarItem icon={LuTrendingUp} label="Analytics" />
-      <SidebarItem icon={LuUser} label="Profile" />
-      <SidebarItem icon={LuSettings} label="Settings" />
-    </VStack>
-  );
-};
-
-const SidebarItem = ({
-  icon,
-  label,
-}: {
-  icon: IconType;
-  label: string;
-  active?: boolean;
-}) => {
-  const router = useRouter();
-
-  const pathname = router.pathname;
-  console.log({ pathname });
-
-  const active = "/" + label?.toLowerCase() === pathname?.toLowerCase();
-  return (
-    <Button
-      leftIcon={createElement(icon)}
-      justifyContent="flex-start"
-      variant="ghost"
-      width="100%"
-      _hover={{ bg: active ? "blue.600" : "blue.100" }}
-      color={active ? "white" : undefined}
-      bg={active ? "blue.500" : "transparent"}
-    >
-      {label}
-    </Button>
-  );
-};
 const StatCard = ({
   icon,
   title,
@@ -506,7 +414,7 @@ const StatCard = ({
 }: {
   icon: IconType;
   title: string;
-  value: string;
+  value: string | ReactNode;
   children?: ReactNode;
 }) => (
   <HStack p={6} borderWidth={1} borderRadius="lg" spacing={4}>

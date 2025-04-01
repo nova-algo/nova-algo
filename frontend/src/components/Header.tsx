@@ -23,7 +23,7 @@ import {
 import { useEffect } from "react";
 import { useOkto, OktoContextType, WalletData } from "okto-sdk-react";
 import { ResponsiveModalSheet } from "./SheetOrModal";
-import { LuMenu } from "react-icons/lu";
+import { LuChevronsDown, LuMenu } from "react-icons/lu";
 import Gradient3DBackground from "./GradientBg";
 import { shortenAddress } from "@/utils";
 import Navbar from "./Navbar";
@@ -175,6 +175,7 @@ export default function Header() {
                 <HStack>
                   <DarkMode>
                     <Button
+                      rightIcon={<LuChevronsDown />}
                       size={{ base: "sm", md: "md" }}
                       gap={2}
                       variant={"outline"}
