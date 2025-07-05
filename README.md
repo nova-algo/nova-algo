@@ -1,176 +1,160 @@
+# Nova Algo x Radar Hackathon
 
-# Nova Algo
+<!-- Video Demo - [Demo video](https://www.loom.com/share/38af2c5c8a8e46c29e16e316099dcee1) <br />
+Live Link - [Enigma-Protocol dapp](https://enigma-protocol.vercel.app/) <br />
+Pitch Deck - [Figma slides](https://www.figma.com/proto/diEzJsJcpkEzwZfWfRqULh/Enigma-Protocol?node-id=1-205&t=PWgmft5uE7HVKyqy-1&scaling=contain&content-scaling=fixed&page-id=0%3A1) <br/> -->
 
-Nova Algo is a revolutionary platform that democratizes algorithmic trading through AI. We empower traders of all technical backgrounds to create, test, and deploy sophisticated trading strategies using simple natural language instructions. Our dual-approach system offers both AI-generated custom strategies and battle-tested pre-built algorithms, all within a secure testing environment.
+## ✨ Description
 
-## The Problem We're Solving
+[Nova Algo](https://enigma-protocol.vercel.app/) is an algorithmic trading protocol for solana. It brings professional-grade quant finance trading algorithms and tools to retail on Solana. It trades on the Drift protocol DEX. We employed active yield vaults where users can pool in their USDC, BONK into the vault pools, and earn real yield from our algorithmic strategies which are connected to these vaults and running 24/7 under close monitoring.
 
-The rapidly expanding cryptocurrency markets (over $3 trillion in 2024) remain ineffective to most traders due to three critical barriers: 
+## Inspiration
+97% of traders are not profitable, the market is so efficient that the only way you can be profitable is if you find your edge, that's why all the hedge funds and wall street employ quantitative methods so they can beat the market and they are so secretive about their alpha. We thought about coming up with our own edge with automation and coming up with quantitative methods to build strategies that would otherwise have been impossible to implement without automation to build out our edge and then allow retail to enjoy the profits from the institutional quantitative trading methods from our platform.
 
-1. **Technical Barrier**: Creating effective trading algorithms traditionally requires extensive programming knowledge and quantitative skills
+## What it does
+Nova Algo enables Drift Protocol based investment vaults that trade on Solana using custom made algorithmic trading strategies.
 
-2. **Risk Assessment Challenge**: Without robust testing infrastructure, strategies often fail catastrophically when deployed with real capital
+We deployed our strategies using Drift Protocols vaults, allowing our strategies to be investable to any DeFi user with a profit-sharing fee model.
 
-3. **Strategy Innovation Gap**: Countless trading insights go unexploited because traders lack the technical means to implement and validate their ideas
+The DeFi user can invest in the strategies on our vaults using a familiar yield farming user interface directly from their wallet depositing USDC or BONK.
 
-## Our Solution
 
-Nova Algo bridges these gaps through:
+## How we built it
 
-1. **Advanced Strategy Suite**: Access our production-ready trading algorithms, including our sophisticated rebalancing agent, momentum strategies, and more
+We wrote our trading strategies using `Python` and backtested them with the `Backtesting.py` library with some historical data. We also used trading and data analysis libraries like `pandas-ta`, `pandas` etc.
 
-2. **AI Strategy Generation**: Transform natural language descriptions into executable trading code using our RAG-enhanced AI system
+We wrote our bots then connected it to our Drift protocol based vaults that trade on the Drift Protocol DEX. We are currently running three different strategies on our vaults at the moment: 
 
-3. **Secure Sandbox Environment**: Test all strategies in an isolated environment with resource limitations and security boundaries
+1. The Drifting Tiger Vault - which trades the supply and demand zone strategy which trades the SOL-USD perpetual pair. Users deposit USDC into this vault.
 
-4. **Comprehensive Performance Analysis**: Evaluate strategies against historical data with metrics for risk-adjusted returns, drawdowns, and more
+2. The Bonking Dragon Vault - which trades the bollinger band + EMA strategy for the 1MBONK perpetual pair. Users deposit can deposit BONK or USDC into this vault. If users deposit BONK into the vault our bot borrows USDC on their behalf and trades with it, in a bull market they earn as their BONK appreciates in value and earn from from the vault's profits as well.
 
-5. **Multi-Strategy Framework**: Support for diverse strategy types including technical indicators, sentiment analysis, and statistical arbitrage
+3. The Double Boost Vault - which trades a funding rate based strategy on any pair we input, this strategy is very flexible as we can aim to improve it to even perform funding rate arbitrage between different pairs funding rates. Users deposit USDC into this vault.
 
-Our platform delivers the power of algorithmic trading to everyone - from institutional traders seeking to diversify their approach to individual investors with unique market insights but limited technical skills. Whether using our proven strategies or creating custom ones, Nova Algo transforms trading ideas into executable algorithms in minutes rather than months.
+## Where we deployed to/contract details
 
-## 🌟 Core Platform Features
+We created and deployed our different vaults on the Solana Devnet Chain.
 
-### Multi-Chain Support
-- **Solana**: Advanced integration with Drift Protocol
-- **Ethereum**: MEV strategies and DEX arbitrage
-- **Cross-chain**: Optimized trading across different blockchain ecosystems
+1. Drifting Tiger Vault - HrAuKuC8KuhqRcdmUu3WhSrNFv4HaV6XtqCdashhVH1A
 
-### Intelligent Trading Modules
+2. Bonking Dragon - 5QAPFbeAHtgb8LkbDBMSyaAmwtQRufWceQLLaxdSse6M
 
-#### 1. Automated Strategy Vaults
-- **SOL Perp Real Yield Vault**
-  - LongShortTrend strategy using ALMA
-  - Dynamic position sizing
-  - Automated trend detection
-  - Contract: `HrAuKuC8KuhqRcdmUu3WhSrNFv4HaV6XtqCdashhVH1A`
+3. Double Boost - 4K1s2DtLXrYXVMYShDdLLWTLezpyTBKpTFz2DEpt8QkF
 
-- **Gamma Market Maker Vault**
-  - Advanced market making on SOLPERP
-  - Volatility-based quoting
-  - Microstructure analysis
-  - Contract: `5QAPFbeAHtgb8LkbDBMSyaAmwtQRufWceQLLaxdSse6M`
+## Installation
 
-- **MEV Backrunner**
-  - Uniswap/Curve arbitrage detection
-  - Efficient bundle execution
-  - Gas-optimized transactions
-  - Real-time opportunity analysis
+To install this project:
 
-#### 2. AI-Powered Portfolio Management
-- **Data-Driven Intelligence Engine**
-  - Statistical market analysis for optimal trade timing
-  - Real-time volatility and correlation tracking
-  - Risk-adjusted portfolio optimization
+### Prerequisites
 
-- **Advanced Rebalancing**
-  - Dynamic rebalancing with circuit breakers
-  - Risk-aware trade execution
-  - Performance tracking and optimization
+<!-- - [Git](https://git-scm.com/downloads) -->
+- [Python](https://www.python.org/downloads/) (version 3.10 or higher)
+- [pyenv](https://github.com/pyenv/pyenv#installation)
+- [Poetry](https://python-poetry.org/docs/#installation)
 
-- **Market Intelligence**
-  - Real-time market sentiment analysis
-  - Asset-specific price predictions
-  - Manipulation detection algorithms
-  - Fear/greed index monitoring
+### Steps
 
-#### 3. Conversational Trading Agent
-- **Natural Language Trading Interface**
-  - Execute trades through simple conversations
-  - Receive market insights and recommendations
-  - Portfolio monitoring and adjustments
-  
-- **Intelligent Decision Making**
-  - Combines sentiment analysis with statistical metrics
-  - Autonomous position sizing and risk management
-  - Dynamic strategy adaptation to market conditions
-  
-- **Personalized Agent Experience**
-  - Learn user preferences over time
-  - Tailored risk profiles
-  - Custom execution parameters
+1. **Clone the Repository**
 
-### Coming April 2025: Strategy Development Capabilities
-- **No-Code Strategy Creation**
-  - Natural language to code translation
-  - Visual strategy builder
-  - Template modification
-  
-- **Professional Development Tools**
-  - Comprehensive API
-  - Custom indicator creation
-  - Strategy backtesting framework
-  
-- **Strategy Marketplace**
-  - Community-built strategies
-  - Performance leaderboards
-  - Strategy subscription options
+   Clone the project repository from GitHub:
 
-## 🧠 AI Architecture
+   ```
+   git clone https://github.com/nova-algo/nova-algo
+   ```
 
-```plaintext
-┌─────────────────┐    ┌──────────────┐    ┌────────────────┐
-│ AI Analysis     │───▶│ Intelligence │───▶│ Strategy       │
-│ - Predictions   │    │    Engine    │    │   Engine       │
-│ - Sentiment     │    │ (Decision    │    │ (Execution     │
-│ - Market Data   │    │  Making)     │    │  Logic)        │
-└─────────────────┘    └──────────────┘    └────────────────┘
-         ▲                    │                     │
-         │                    ▼                     ▼
-┌─────────────────┐    ┌──────────────┐    ┌────────────────┐
-│ Market Analysis │    │    Risk      │    │  Performance   │
-│ - Statistics    │────▶  Management  │────▶   Tracking     │
-│ - Patterns      │    │   System     │    │   & Learning   │
-└─────────────────┘    └──────────────┘    └────────────────┘
-```
+2. **Navigate to the Project Directory**
 
-## 💻 Technical Stack
+   Change into the project directory:
 
-### Backend Infrastructure
-- Python 3.10+
-- Web3.py for blockchain interaction
-- Advanced data analysis (pandas, numpy)
-- Custom simulation frameworks
+   ```
+   cd nova-algo/backend
+   ```
 
-### Development Tools
-- Poetry for dependency management
-- Pytest for testing
-- Type hints for code safety
-- CI/CD automation
+3. **Set up Python Environment**
 
-## 📈 Performance
+   Ensure you have the correct Python version installed using pyenv:
 
-Our strategies are designed to:
-- Generate consistent risk-adjusted returns
-- Minimize drawdowns through sophisticated risk management
-- Provide transparent performance metrics
-- Operate 24/7 with automated monitoring
+   ```
+   pyenv install 3.10.11
+   ```
 
-## 🛠 Installation
+   Then, you can either set the Python version globally:
 
-```bash
-# Clone the repository
-git clone https://github.com/nova-algo/nova-algo.git
-cd nova-algo
+   ```
+   pyenv global 3.10.11
+   ```
 
-# Install dependencies using Poetry
-poetry install
+   Or, if you prefer to set the Python version only for this project, navigate to the project directory and run:
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your API keys and settings
+   ```
+   pyenv local 3.10.11
+   ```
 
-# Activate virtual environment
-poetry shell
+   Using `pyenv local` is often preferred for project-specific Python version management as it doesn't affect your global Python environment.
 
-# Run tests
-poetry run pytest
-```
+   After setting up pyenv, ensure your IDE or text editor is using the correct Python interpreter:
 
-## 🔗 Links
-- [Website](https://novaalgo.xyz)
-- [GitHub](https://github.com/nova-algo)
+   - For VS Code: Open the command palette (Ctrl+Shift+P), search for "Python: Select Interpreter", and choose the interpreter that matches your pyenv version (e.g., Python 3.10.11 64-bit ('nova_algo': pyenv)).
+   - For PyCharm: Go to File > Settings > Project: nova_algo > Python Interpreter, and select the interpreter from your pyenv environment.
 
----
+   You can verify the correct interpreter is being used by running:
 
-*Nova Algo - Bringing institutional-grade algorithmic trading to DeFi*
+   ```
+   which python
+   python --version
+   ```
+
+   These commands should show the path to your pyenv-managed Python and its version (3.10.11).
+
+4. **Set up Poetry Environment**
+
+   Create a new Poetry environment and use the Python version managed by pyenv:
+
+   ```
+   poetry env use $(pyenv which python)
+   ```
+
+5. **Install Dependencies**
+
+   Install the project dependencies using Poetry:
+
+   ```
+   poetry install
+   ```
+
+6. **Activate the Poetry Environment**
+
+   Activate the newly created Poetry environment:
+
+   ```
+   poetry shell
+   ```
+
+7. **Run the Strategy**
+
+   You can run the strategy using the main script:
+
+   ```
+   python main.py
+   ```
+
+8. **Configure the Vault (Optional)**
+
+   If you need to configure or initialize a vault, you can use the `configure_vault.py` or `initialize_vault.py` scripts:
+
+   ```
+   python src/vault/configure_vault.py --help
+   python src/vault/initialize_vault.py --help
+   ```
+
+   Follow the prompts or provide the necessary arguments to configure or initialize a vault.
+
+9. **Environment Variables**
+
+   Make sure to set up your environment variables. Create a `.env` file in the `backend` directory with the necessary configurations.
+
+10. **Additional Notes**
+
+    - The project uses various libraries such as `anchorpy`, `solana`, `driftpy`, and others. Make sure you're familiar with their documentation.
+    - The `src/api/drift/api.py` file contains the main DriftAPI implementation.
+    - The `src/strategy/bollingerbands.py` file contains the Bollinger Bands strategy implementation.
